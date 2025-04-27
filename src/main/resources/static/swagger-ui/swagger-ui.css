@@ -1,0 +1,4 @@
+.swagger-ui .opblock-summary-path {
+    white-space: nowrap;
+    word-break: keep-all;
+}

@@ -1,0 +1,37 @@
+issues:
+  - title: "[Product] 인기 상품 조회 성능 분석 및 인덱스 설계"
+    body: |
+      - 최근 3일간 상위 5개 인기 상품 조회 쿼리에 대해 실행 계획 분석
+      - 적절한 인덱스 적용 및 통계 집계 테이블 구조 개선안 작성
+    labels: ["product", "performance", "step08"]
+
+  - title: "[Product] 재고 차감 동시성 테스트 작성"
+    body: |
+      - 재고가 한정된 상품에 대한 다중 주문 시나리오 테스트 작성
+      - 재고 감소 로직에서 동시성 이슈 발생 여부 검증
+    labels: ["product", "concurrency", "step08"]
+
+  - title: "[Balance] 잔액 차감 동시성 테스트 작성"
+    body: |
+      - 동일 사용자의 잔액 차감 요청이 동시에 들어올 경우 충돌 여부 테스트
+      - 트랜잭션 롤백 및 재시도 전략 적용 여부 확인
+    labels: ["balance", "concurrency", "step08"]
+
+  - title: "[Coupon] 선착순 쿠폰 발급 동시성 테스트 작성"
+    body: |
+      - 쿠폰 수량 제한 조건 하에서 선착순 쿠폰 발급 시나리오 동시성 테스트 작성
+      - 중복 발급 방지 및 Lock 전략 적용 여부 확인
+    labels: ["coupon", "concurrency", "step08"]
+
+  - title: "[Order] 주문 생성 시 병목 쿼리 분석 및 개선안 작성"
+    body: |
+      - 주문 생성 시 상품/잔액/쿠폰 조회 및 상태 갱신 쿼리의 병목 구간 파악
+      - 실행 계획 기반 인덱스 제안 또는 트랜잭션 분리 고려
+    labels: ["order", "performance", "step08"]
+
+  - title: "[통합] 병목 구간 및 인덱스 설계 보고서 작성"
+    body: |
+      - 전체 기능 중 조회/삽입/갱신에서 병목 발생 가능한 구간을 도출
+      - 실행 계획 기반 인덱스 최적화 또는 스키마 개선안 도출
+      - 문서화하여 팀원 공유용 리포트 작성
+    labels: ["db", "performance", "report", "step08"]
