@@ -2,6 +2,7 @@ version: '3'
 services:
   mysql:
     image: mysql:8.0
+    container_name: mysql
     ports:
       - "3306:3306"
     environment:
@@ -13,7 +14,60 @@ services:
       - ./data/mysql/:/var/lib/mysql
       - ./init/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - ./init/02-data.sql:/docker-entrypoint-initdb.d/02-data.sql
+    networks:
+      - redis-net
+
+  redis-master:
+    image: redis:7
+    container_name: redis-master
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    networks:
+      - redis-net
+
+  redis-slave:
+    image: redis:7
+    container_name: redis-slave
+    ports:
+      - "6380:6379"
+    command: redis-server --slaveof redis-master 6379
+    networks:
+      - redis-net
+
+  sentinel1:
+    image: redis:7
+    container_name: sentinel1
+    ports:
+      - "26379:26379"
+    command: redis-sentinel /etc/redis/sentinel1.conf
+    volumes:
+      - ./redis/sentinel1.conf:/etc/redis/sentinel1.conf
+    networks:
+      - redis-net
+
+  sentinel2:
+    image: redis:7
+    container_name: sentinel2
+    ports:
+      - "26380:26380"
+    command: redis-sentinel /etc/redis/sentinel2.conf
+    volumes:
+      - ./redis/sentinel2.conf:/etc/redis/sentinel2.conf
+    networks:
+      - redis-net
+
+  sentinel3:
+    image: redis:7
+    container_name: sentinel3
+    ports:
+      - "26381:26381"
+    command: redis-sentinel /etc/redis/sentinel3.conf
+    volumes:
+      - ./redis/sentinel3.conf:/etc/redis/sentinel3.conf
+    networks:
+      - redis-net
 
 networks:
-  default:
+  redis-net:
     driver: bridge
