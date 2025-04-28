@@ -57,6 +57,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-aop")
 	implementation("org.springframework.retry:spring-retry")
 
+	// Redis
+	implementation ("org.redisson:redisson-spring-boot-starter:3.24.3")
 
 
 }
