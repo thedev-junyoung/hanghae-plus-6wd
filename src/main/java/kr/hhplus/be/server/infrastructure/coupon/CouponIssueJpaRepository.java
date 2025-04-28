@@ -13,4 +13,8 @@ public interface CouponIssueJpaRepository extends JpaRepository<CouponIssue, Lon
 
     @Query("SELECT COUNT(ci) FROM CouponIssue ci WHERE ci.coupon.code = :code")
     long countByCouponCode(@Param("code") String code);
+
+    @Query("SELECT ci FROM CouponIssue ci JOIN FETCH ci.coupon WHERE ci.userId = :userId AND ci.coupon.id = :couponId")
+    Optional<CouponIssue> findByUserIdAndCouponId(@Param("userId") Long userId, @Param("couponId") Long couponId);
+
 }

@@ -15,7 +15,6 @@ import kr.hhplus.be.server.domain.balance.BalanceRepository;
 import java.util.UUID;
 
 @SpringBootTest
-@Transactional
 class BalanceServiceIntegrationTest {
 
     @Autowired
@@ -28,7 +27,6 @@ class BalanceServiceIntegrationTest {
 
     @Test
     @DisplayName("잔액 충전이 성공하면 실제 금액이 증가한다")
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void charge_shouldIncreaseBalance() {
         // given
         Long userId = 100L;

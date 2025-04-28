@@ -61,7 +61,6 @@ public class OrderConcurrencyTest {
     private static final int CONCURRENCY = 3;
 
     @BeforeEach
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void setUp() {
         // 트랜잭션 없이 바로 DB 반영됨
         Product product = Product.create(

@@ -24,7 +24,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
  * discount_rate:1000
  */
 @SpringBootTest
-@Transactional
 class CouponServiceIntegrationTest {
 
     @Autowired

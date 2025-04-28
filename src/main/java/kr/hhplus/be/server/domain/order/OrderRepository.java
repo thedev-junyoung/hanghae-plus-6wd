@@ -23,4 +23,6 @@ public interface OrderRepository{
 
     Optional<Order> findByIdForUpdate(String orderId);
 
+    Optional<Order> findByIdWithItems(String orderId);
+
 }

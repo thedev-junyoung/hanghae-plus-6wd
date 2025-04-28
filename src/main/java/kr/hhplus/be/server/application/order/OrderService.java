@@ -18,6 +18,7 @@ public class OrderService implements OrderUseCase {
 
     private final OrderRepository orderRepository;
 
+    @Transactional
     public Order createOrder(Long userId, List<OrderItem> items, Money totalAmount) {
         Order order = Order.create(userId, items, totalAmount);
         orderRepository.save(order);

@@ -6,6 +6,8 @@ import kr.hhplus.be.server.application.order.CreateOrderCommand;
 import kr.hhplus.be.server.application.order.OrderFacadeService;
 import kr.hhplus.be.server.application.order.OrderResult;
 import kr.hhplus.be.server.common.vo.Money;
+import kr.hhplus.be.server.domain.balance.Balance;
+import kr.hhplus.be.server.domain.balance.BalanceRepository;
 import kr.hhplus.be.server.domain.order.OrderRepository;
 import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.domain.product.ProductRepository;
@@ -16,8 +18,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -67,14 +67,19 @@ public class PaymentConcurrencyTest {
     @Autowired
     private OrderRepository orderRepository;
 
-    private final Long userId = 777L;
+    @Autowired
+    private BalanceRepository balanceRepository;
+
+    private final Long userId = System.currentTimeMillis();
     private String orderId;
 
     private final long PRICE = 10_000L;
 
     @BeforeEach
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void setUp() {
+        // 0. 유저 Balance를 먼저 생성
+        balanceRepository.save(Balance.createNew(userId, Money.wons(0L)));
+
         // 1. 잔액 세팅
         balanceFacade.charge(ChargeBalanceCriteria.of(userId, PRICE, "초기 충전", "REQUEST-01"));
 

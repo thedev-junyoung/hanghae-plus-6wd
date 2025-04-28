@@ -38,7 +38,7 @@ class BalanceServiceTest {
 
         String requestId = "REQ-" + UUID.randomUUID();
         // given
-        Balance existing = Balance.createNew(1L, 100L, Money.wons(1000));
+        Balance existing = Balance.createNew( 100L, Money.wons(1000));
         when(balanceRepository.findByUserId(100L)).thenReturn(Optional.of(existing));
         when(balanceRepository.save(eq(existing))).thenReturn(existing); // eq로 명시적 비교
 
@@ -57,7 +57,7 @@ class BalanceServiceTest {
     @DisplayName("잔액을 차감할 수 있다")
     void decreaseSuccess() {
         // given
-        Balance existing = Balance.createNew(1L, 100L, Money.wons(1000));
+        Balance existing = Balance.createNew(100L, Money.wons(1000));
         when(balanceRepository.findByUserId(100L)).thenReturn(Optional.of(existing));
         when(balanceRepository.save(eq(existing))).thenReturn(existing);
 
@@ -80,7 +80,7 @@ class BalanceServiceTest {
     @DisplayName("잔액이 부족하면 예외가 발생한다")
     void decrease_fail_not_enough_balance() {
         // givena
-        Balance existing = Balance.createNew(1L, 100L, Money.wons(300));
+        Balance existing = Balance.createNew( 100L, Money.wons(300));
         when(balanceRepository.findByUserId(100L)).thenReturn(Optional.of(existing));
 
         DecreaseBalanceCommand command = new DecreaseBalanceCommand(100L, 500);
@@ -94,7 +94,7 @@ class BalanceServiceTest {
     @Test
     @DisplayName("잔액을 조회할 수 있다")
     void getBalance_success() {
-        Balance balance = Balance.createNew(1L, 100L, Money.wons(1500));
+        Balance balance = Balance.createNew( 100L, Money.wons(1500));
         when(balanceRepository.findByUserId(100L)).thenReturn(Optional.of(balance));
 
         BalanceResult result = balanceService.getBalance(100L);
