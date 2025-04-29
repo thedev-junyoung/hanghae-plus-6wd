@@ -38,4 +38,9 @@ public class OrderRepositoryImpl implements OrderRepository {
     public Optional<Order> findByIdForUpdate(String orderId) {
         return jpaRepository.findByIdForUpdate(orderId);
     }
+
+    @Override
+    public Optional<Order> findByIdWithItems(String orderId) {
+        return jpaRepository.findByIdWithItems(orderId);
+    }
 }

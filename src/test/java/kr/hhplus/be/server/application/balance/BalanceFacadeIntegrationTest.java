@@ -18,7 +18,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-@Transactional(propagation = Propagation.NOT_SUPPORTED)
 class BalanceFacadeIntegrationTest {
 
     @Autowired

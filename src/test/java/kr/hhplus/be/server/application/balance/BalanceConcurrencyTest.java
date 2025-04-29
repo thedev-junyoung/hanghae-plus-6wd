@@ -107,7 +107,7 @@ public class BalanceConcurrencyTest {
                     System.out.println("기존 잔액 초기화 완료");
                 },
                 () -> {
-                    balanceRepository.save(Balance.createNew(null, userId, Money.wons(0L)));
+                    balanceRepository.save(Balance.createNew(userId, Money.wons(0L)));
                     System.out.println("잔액 새로 생성됨");
                 }
         );

@@ -42,8 +42,14 @@ public class Balance {
         this.updatedAt = now;
     }
 
-    public static Balance createNew(Long id, Long userId, Money amount) {
-        return new Balance(id, userId, amount);
+    public static Balance createNew(Long userId, Money amount) {
+        LocalDateTime now = LocalDateTime.now();
+        Balance balance = new Balance();
+        balance.userId = userId;
+        balance.amount = amount.value();
+        balance.createdAt = now;
+        balance.updatedAt = now;
+        return balance;
     }
 
     public void charge(Money value) {

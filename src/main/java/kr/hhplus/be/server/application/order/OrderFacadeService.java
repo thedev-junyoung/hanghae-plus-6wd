@@ -5,6 +5,7 @@ import kr.hhplus.be.server.application.coupon.ApplyCouponResult;
 import kr.hhplus.be.server.application.coupon.CouponUseCase;
 import kr.hhplus.be.server.application.product.*;
 import kr.hhplus.be.server.common.vo.Money;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderFacadeService {
 
     private final ProductUseCase productService;
@@ -60,6 +62,9 @@ public class OrderFacadeService {
 
         // 4. 주문 생성 및 저장
         Order order = orderService.createOrder(command.userId(), orderItems, total);
+
+
+        log.info(order.toString());
 
         // 5. 결제 완료 이벤트 발행 (Outbox 패턴 기반 처리)
         orderEventService.recordPaymentCompletedEvent(order);

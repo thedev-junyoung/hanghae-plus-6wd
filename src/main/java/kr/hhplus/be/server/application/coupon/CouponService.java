@@ -40,6 +40,7 @@ public class CouponService implements CouponUseCase {
     }
 
     @Override
+    @Transactional
     public ApplyCouponResult applyCoupon(ApplyCouponCommand command) {
         // 쿠폰 코드로 쿠폰 조회
         Coupon coupon = couponRepository.findByCode(command.couponCode());

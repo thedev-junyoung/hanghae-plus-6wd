@@ -30,7 +30,6 @@ class StockServiceIntegrationTest {
     private Long productId;
 
     @BeforeEach
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void setUp() {
         Product product = Product.create("Test Product", "Brand", Money.wons(10000), LocalDate.now().minusDays(1), null, null);
         product = productRepository.save(product);

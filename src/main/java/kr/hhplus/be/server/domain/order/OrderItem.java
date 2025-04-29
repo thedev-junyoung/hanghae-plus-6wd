@@ -49,4 +49,14 @@ public class OrderItem {
     public Money calculateTotal() {
         return Money.from(price).multiply(quantity);
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(" +
+                "id = " + id + ", " +
+                "productId = " + productId + ", " +
+                "quantity = " + quantity + ", " +
+                "size = " + size + ", " +
+                "price = " + price + ")";
+    }
 }

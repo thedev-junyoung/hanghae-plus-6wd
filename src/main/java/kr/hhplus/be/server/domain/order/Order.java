@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -80,6 +79,17 @@ public class Order {
         if (status != OrderStatus.CREATED) {
             throw new OrderException.InvalidStateException(status, "payment");
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(" +
+                "id = " + id + ", " +
+                "userId = " + userId + ", " +
+                "totalAmount = " + totalAmount + ", " +
+                "items = " + items + ", " +
+                "status = " + status + ", " +
+                "createdAt = " + createdAt + ")";
     }
 }
 

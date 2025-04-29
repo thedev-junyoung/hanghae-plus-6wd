@@ -60,7 +60,6 @@ public class CouponConcurrencyTest {
     private static final int CONCURRENCY = 10;
 
     @BeforeEach
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void setUp() {
         // 초기화: 쿠폰 직접 저장
         Coupon coupon = Coupon.createLimitedFixed(COUPON_CODE, 1000, TOTAL_QUANTITY,

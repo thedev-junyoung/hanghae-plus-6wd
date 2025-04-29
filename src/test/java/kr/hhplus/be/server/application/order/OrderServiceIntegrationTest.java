@@ -13,7 +13,6 @@ import java.util.List;
 
 
 @SpringBootTest
-@Transactional
 class OrderServiceIntegrationTest {
 
     @Autowired
@@ -39,7 +38,7 @@ class OrderServiceIntegrationTest {
         Order order = orderService.createOrder(userId, items, total);
 
         // then
-        Order saved = orderRepository.findById(order.getId()).orElseThrow();
+        Order saved = orderRepository.findByIdWithItems(order.getId()).orElseThrow();
         assertThat(saved.getUserId()).isEqualTo(userId);
         assertThat(Money.from(saved.getTotalAmount())).isEqualTo(total);
         assertThat(saved.getItems()).hasSize(1);
