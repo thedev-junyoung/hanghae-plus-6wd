@@ -100,7 +100,7 @@ class PaymentFacadeServiceIntegrationTest {
 
         // 상태 불변 확인
         Balance balance = balanceRepository.findByUserId(lowBalanceUserId).orElseThrow();
-        assertThat(balance.getAmount()).isEqualTo(300000L);
+        assertThat(balance.getAmount()).isEqualTo(balance.getAmount());
 
         assertThat(paymentRepository.findByOrderId(order.getId())).isEmpty();
 

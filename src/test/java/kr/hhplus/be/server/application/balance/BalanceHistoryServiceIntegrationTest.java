@@ -39,7 +39,11 @@ class BalanceHistoryServiceIntegrationTest {
         service.recordHistory(command);
 
         // then
-        BalanceHistory history = repository.findAllByUserId(userId).get(0);
+        BalanceHistory history = repository.findAllByUserId(userId).stream()
+                .filter(h -> reason.equals(h.getReason()))  // reason으로 필터링
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("히스토리가 저장되지 않았습니다."));
+
         assertThat(history.getUserId()).isEqualTo(userId);
         assertThat(history.getAmount()).isEqualTo(5000L);
         assertThat(history.getReason()).isEqualTo(reason);

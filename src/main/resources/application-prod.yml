@@ -1,15 +1,13 @@
 spring:
   application:
     name: hhplus
-  profiles:
-    active: local
   datasource:
     name: HangHaePlusDataSource
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
-#      maximum-pool-size: 3
-#      connection-timeout: 10000
-#      max-lifetime: 60000
+      #      maximum-pool-size: 3
+      #      connection-timeout: 10000
+      #      max-lifetime: 60000
       maximum-pool-size: 10
       minimum-idle: 5
       idle-timeout: 30000
@@ -28,7 +26,6 @@ spring:
       hibernate.dialect: org.hibernate.dialect.MySQL8Dialect
 
 ---
-spring.config.activate.on-profile: local, test
 
 spring:
   datasource:
@@ -42,9 +39,9 @@ spring:
       port: 6379
 
 logging:
-    level:
-      root: INFO
-      web: debug
+  level:
+    root: INFO
+    web: debug
 
 
 server:

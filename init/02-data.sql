@@ -39,10 +39,28 @@ VALUES
 ;
 
 -- Balance
-INSERT INTO balance (id, user_id, amount, created_at, updated_at)
-VALUES
-    (1, 100, 500000, NOW(), NOW()),
-    (2, 101, 300000, NOW(), NOW());
+INSERT INTO balance (id, user_id, amount, created_at, updated_at) VALUES
+(1, 100, 500000, NOW(), NOW()),
+(2, 101, 300000, NOW(), NOW()),
+(3, 102, 300000, NOW(), NOW()),
+(4, 103, 300000, NOW(), NOW()),
+(5, 104, 300000, NOW(), NOW()),
+(6, 105, 300000, NOW(), NOW()),
+(7, 106, 300000, NOW(), NOW()),
+(8, 107, 300000, NOW(), NOW()),
+(9, 108, 300000, NOW(), NOW()),
+(10, 109, 300000, NOW(), NOW());
+
+INSERT INTO balance (user_id, amount, created_at, updated_at)
+SELECT 10000 + id, 100000, NOW(), NOW()
+FROM (
+         SELECT @row := @row + 1 AS id
+         FROM information_schema.tables t1,
+             information_schema.tables t2,
+             (SELECT @row := 0) r
+             LIMIT 100
+     ) temp;
+
 
 -- Coupon
 INSERT INTO coupon (id, code, type, discount_rate, total_quantity, remaining_quantity, valid_from, valid_until)
