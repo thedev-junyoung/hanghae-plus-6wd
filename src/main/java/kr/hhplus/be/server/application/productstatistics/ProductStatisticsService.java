@@ -5,6 +5,7 @@ import kr.hhplus.be.server.common.vo.Money;
 import kr.hhplus.be.server.domain.productstatistics.ProductStatistics;
 import kr.hhplus.be.server.domain.productstatistics.ProductStatisticsRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;

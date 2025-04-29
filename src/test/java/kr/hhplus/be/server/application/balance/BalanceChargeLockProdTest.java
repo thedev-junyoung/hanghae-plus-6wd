@@ -21,7 +21,7 @@ import java.util.concurrent.Future;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-@ActiveProfiles("prod")  // ✅ 진짜 운영 환경으로 테스트
+@ActiveProfiles("prod")  // 진짜 운영 환경으로 테스트
 class BalanceChargeLockProdTest {
 
     @Autowired

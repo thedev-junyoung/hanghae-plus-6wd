@@ -42,10 +42,10 @@ class CouponControllerIntegrationTest {
     @Test
     @DisplayName("한정 쿠폰 발급 - 성공")
     void limitedIssueCoupon_success() throws Exception {
-        // ✅ Step 1: 고유한 쿠폰 코드 생성
+        // Step 1: 고유한 쿠폰 코드 생성
         String uniqueCode = "TEST-" + System.currentTimeMillis();
 
-        // ✅ Step 2: 테스트용 쿠폰을 먼저 DB에 저장
+        // Step 2: 테스트용 쿠폰을 먼저 DB에 저장
         Coupon coupon = Coupon.createLimitedFixed(
                 uniqueCode,
                 1000,               // discountAmount

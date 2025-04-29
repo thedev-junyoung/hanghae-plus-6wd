@@ -102,8 +102,19 @@ VALUES
 -- Product Statistics
 INSERT INTO product_statistics (product_id, stat_date, sales_count, sales_amount)
 VALUES
-    (1, CURRENT_DATE, 1, 199000),
-    (2, CURRENT_DATE, 1, 169000);
+    (1, CURRENT_DATE, 10, 199000),
+    (2, CURRENT_DATE, 5, 169000),
+    (3, CURRENT_DATE, 4, 129000),
+    (4, CURRENT_DATE, 1, 109000),
+    (5, CURRENT_DATE, 9, 139000),
+    (6, CURRENT_DATE, 11, 185000),
+    (7, CURRENT_DATE, 18, 129000),
+    (8, CURRENT_DATE, 2, 85000),
+    (9, CURRENT_DATE, 1, 69000),
+    (10, CURRENT_DATE, 1, 99000),
+    (11, CURRENT_DATE, 1, 249000),
+    (12, CURRENT_DATE, 1, 239000);
+
 
 
 
