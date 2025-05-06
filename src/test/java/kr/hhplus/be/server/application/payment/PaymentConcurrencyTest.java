@@ -17,7 +17,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,31 +29,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-
-/**
- * 결제 요청의 중복 처리를 방지하는 동시성 테스트 클래스.
- *
- * <p>하나의 주문에 대해 여러 명이 동시에 결제를 요청하는 시나리오를 시뮬레이션한다.</p>
- *
- * <p>적용된 동시성 제어 방식:</p>
- * <ul>
- *   <li>주문 객체 조회 시 `@Lock(PESSIMISTIC_WRITE)`으로 선점</li>
- *   <li>잔액 차감, 결제 저장, 주문 상태 변경을 하나의 트랜잭션 내에서 처리</li>
- * </ul>
- *
- * <p>검증 포인트:</p>
- * <ul>
- *   <li>결제 요청이 동시에 들어와도 오직 1건만 성공</li>
- *   <li>나머지는 중복 처리로 인해 예외 발생</li>
- * </ul>
- */
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 public class PaymentConcurrencyTest {
 
     @Autowired
     private PaymentFacadeService paymentFacadeService;
+
 
     @Autowired
     private BalanceFacade balanceFacade;
@@ -70,24 +56,21 @@ public class PaymentConcurrencyTest {
     @Autowired
     private BalanceRepository balanceRepository;
 
+
     private final Long userId = System.currentTimeMillis();
     private String orderId;
-
     private final long PRICE = 10_000L;
 
     @BeforeEach
     void setUp() {
-        // 0. 유저 Balance를 먼저 생성
         balanceRepository.save(Balance.createNew(userId, Money.wons(0L)));
-
-        // 1. 잔액 세팅
         balanceFacade.charge(ChargeBalanceCriteria.of(userId, PRICE, "초기 충전", "REQUEST-01"));
 
-        // 2. 상품 및 재고 세팅
-        Product product = productRepository.save(Product.create("테스트 상품", "브랜드", Money.wons(PRICE), LocalDate.now().minusDays(1), null, null));
+        Product product = productRepository.save(
+                Product.create("테스트 상품", "브랜드", Money.wons(PRICE), LocalDate.now().minusDays(1), null, null)
+        );
         stockRepository.save(ProductStock.of(product.getId(), 270, 10));
 
-        // 3. 주문 생성
         CreateOrderCommand command = new CreateOrderCommand(
                 userId,
                 List.of(new CreateOrderCommand.OrderItemCommand(product.getId(), 1, 270)),
@@ -98,8 +81,8 @@ public class PaymentConcurrencyTest {
     }
 
     @Test
-    @DisplayName("동시에 여러 번 결제를 요청해도 1건만 성공해야 한다")
-    void should_allow_only_one_successful_payment_when_concurrent_requests_are_made() throws InterruptedException {
+    @DisplayName("동시에 여러 번 결제를 요청해도 1건만 성공하고 잔액은 정확히 10,000원만 차감되어야 한다")
+    void should_allow_only_one_successful_payment_and_deduct_balance_exactly_once() throws InterruptedException {
         int CONCURRENCY = 5;
         ExecutorService executor = Executors.newFixedThreadPool(CONCURRENCY);
         CountDownLatch latch = new CountDownLatch(CONCURRENCY);
@@ -110,10 +93,12 @@ public class PaymentConcurrencyTest {
         for (int i = 0; i < CONCURRENCY; i++) {
             executor.execute(() -> {
                 try {
-                    RequestPaymentCommand command = new RequestPaymentCommand(orderId, userId , PRICE, "BALANCE");
+                    RequestPaymentCommand command = new RequestPaymentCommand(orderId, userId, PRICE, "BALANCE");
                     PaymentResult result = paymentFacadeService.requestPayment(command);
+                    System.out.println("[SUCCESS] " + result);
                     successes.add(result);
                 } catch (Exception e) {
+                    System.out.println("[FAILURE] " + e.getMessage());
                     failures.add(e);
                 } finally {
                     latch.countDown();
@@ -123,8 +108,14 @@ public class PaymentConcurrencyTest {
 
         latch.await();
 
-        System.out.println("성공한 결제 수: " + successes.size());
-        System.out.println("실패한 결제 수: " + failures.size());
+        Balance balance = balanceRepository.findByUserId(userId).orElseThrow();
+
+        System.out.println("성공: " + successes.size());
+        System.out.println("실패: " + failures.size());
+        System.out.println("잔액: " + balance.getAmount());
+
         assertThat(successes).hasSize(1);
+        assertThat(balance.getAmount()).isEqualTo(0L);
+        assertThat(failures.size()).isEqualTo(CONCURRENCY - 1);
     }
 }

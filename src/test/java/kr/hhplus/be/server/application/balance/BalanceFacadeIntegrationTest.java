@@ -14,8 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 class BalanceFacadeIntegrationTest {
@@ -30,10 +32,10 @@ class BalanceFacadeIntegrationTest {
     private BalanceHistoryRepository balanceHistoryRepository;
 
     @Test
-    @DisplayName("충전 성공 - DB에 이미 존재하는 유저")
+    @DisplayName("충전 성공 - DB에 이미 존재하는 유저, 이벤트 기반 이력 기록 확인")
     void charge_success_using_seeded_data() {
         // given
-        Long userId = 100L; // DB에 이미 존재하는 유저
+        Long userId = 100L;
         Money charge = Money.wons(5_000);
 
         Balance original = balanceRepository.findByUserId(userId).orElseThrow();
@@ -45,15 +47,18 @@ class BalanceFacadeIntegrationTest {
         // when
         balanceFacade.charge(criteria);
 
-        // then
-        Balance updated = balanceRepository.findByUserId(userId).orElseThrow();
-        assertThat(updated.getAmount()).isEqualTo(beforeAmount + charge.value());
+        // then (await: 비동기 이벤트 반영 기다림)
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+            Balance updated = balanceRepository.findByUserId(userId).orElseThrow();
+            assertThat(updated.getAmount()).isEqualTo(beforeAmount + charge.value());
 
-        List<BalanceHistory> histories = balanceHistoryRepository.findAllByUserId(userId);
-        BalanceHistory latest = histories.get(histories.size() - 1); // 최신 기록
+            List<BalanceHistory> histories = balanceHistoryRepository.findAllByUserId(userId);
+            assertThat(histories).isNotEmpty();
 
-        assertThat(latest.getAmount()).isEqualTo(charge.value());
-        assertThat(latest.isChargeHistory()).isTrue();
-        assertThat(latest.getReason()).isEqualTo("충전 테스트");
+            BalanceHistory latest = histories.get(histories.size() - 1);
+            assertThat(latest.getAmount()).isEqualTo(charge.value());
+            assertThat(latest.isChargeHistory()).isTrue();
+            assertThat(latest.getReason()).isEqualTo("충전 테스트");
+        });
     }
 }

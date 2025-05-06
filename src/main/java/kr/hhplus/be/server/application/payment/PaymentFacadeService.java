@@ -2,10 +2,9 @@ package kr.hhplus.be.server.application.payment;
 
 import kr.hhplus.be.server.application.balance.BalanceUseCase;
 import kr.hhplus.be.server.application.balance.DecreaseBalanceCommand;
-import kr.hhplus.be.server.application.order.OrderUseCase;
-import kr.hhplus.be.server.common.vo.Money;
-import kr.hhplus.be.server.domain.order.Order;
-import kr.hhplus.be.server.domain.payment.Payment;
+import kr.hhplus.be.server.application.order.PaymentCompletedEvent;
+import kr.hhplus.be.server.common.lock.DistributedLock;
+import org.springframework.context.ApplicationEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,33 +12,21 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class PaymentFacadeService {
-    private final PaymentUseCase paymentUseCase;
-    private final OrderUseCase orderUseCase;
     private final BalanceUseCase balanceUseCase;
+    private final ApplicationEventPublisher eventPublisher;
 
-    // PaymentFacadeService.java
     @Transactional
+    @DistributedLock(key = "#command.orderId", prefix = "payment:order:")
     public PaymentResult requestPayment(RequestPaymentCommand command) {
-        Money amount = Money.wons(command.amount());
-
-        // 1. 주문을 가져온다.(주문이 존재하는지, 결제 가능한 상태인지 검증)
-//        Order order = orderUseCase.getOrderForPayment(command.orderId());
-        Order order = orderUseCase.getOrderForPaymentWithLock(command.orderId());
-
-        // 2. 잔액 차감
         balanceUseCase.decreaseBalance(
-                new DecreaseBalanceCommand(command.userId(), amount.value())
+                DecreaseBalanceCommand.of(command.userId(), command.amount())
         );
 
-        // 3. 결제 성공 처리
-        Payment payment = paymentUseCase.recordSuccess(
-                PaymentCommand.from(command)
-        );
+        eventPublisher.publishEvent(new PaymentSuccessEvent(command));
+        eventPublisher.publishEvent(new PaymentCompletedEvent(command.orderId()));
 
-        // 4. 주문 상태를 결제 완료로 변경
-        orderUseCase.markConfirmed(order);
-
-        return PaymentResult.from(payment);
+        // 응답은 DB에 저장된 ID가 없어도 바로 반환
+        return PaymentResult.success(command.orderId(), command.amount(), command.method());
     }
 
 }

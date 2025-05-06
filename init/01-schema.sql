@@ -28,8 +28,8 @@ CREATE TABLE balance (
                          user_id BIGINT NOT NULL,
                          amount BIGINT NOT NULL,
                          created_at DATETIME NOT NULL,
-                         updated_at DATETIME NOT NULL,
-                         version BIGINT NOT NULL DEFAULT 0
+                         updated_at DATETIME NOT NULL
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Coupon

@@ -4,6 +4,8 @@ import kr.hhplus.be.server.application.coupon.ApplyCouponCommand;
 import kr.hhplus.be.server.application.coupon.ApplyCouponResult;
 import kr.hhplus.be.server.application.coupon.CouponUseCase;
 import kr.hhplus.be.server.application.product.*;
+import kr.hhplus.be.server.common.lock.AopForTransaction;
+import kr.hhplus.be.server.common.lock.DistributedLockExecutor;
 import kr.hhplus.be.server.common.vo.Money;
 import kr.hhplus.be.server.domain.coupon.CouponType;
 import kr.hhplus.be.server.domain.order.Order;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -26,8 +29,12 @@ class OrderFacadeServiceTest {
     private OrderEventService orderEventService;
     private CouponUseCase couponUseCase;
     private StockService stockService;
+    private DistributedLockExecutor lockExecutor;
+    private AopForTransaction aopForTransaction;
 
     private OrderFacadeService orderFacadeService;
+
+
 
     @BeforeEach
     void setUp() {
@@ -36,8 +43,42 @@ class OrderFacadeServiceTest {
         orderEventService = mock(OrderEventService.class);
         couponUseCase = mock(CouponUseCase.class);
         stockService = mock(StockService.class);
+        lockExecutor = mock(DistributedLockExecutor.class);
+        aopForTransaction = mock(AopForTransaction.class);
 
-        orderFacadeService = new OrderFacadeService(productService, orderService, orderEventService, couponUseCase, stockService);
+        orderFacadeService = new OrderFacadeService(productService, orderService, orderEventService, couponUseCase, stockService, lockExecutor, aopForTransaction);
+
+        when(lockExecutor.execute(anyString(), any()))
+                .thenAnswer(invocation -> {
+                    Object func = invocation.getArgument(1);
+                    if (func instanceof Callable) {
+                        return ((Callable<?>) func).call();
+                    } else if (func instanceof Runnable) {
+                        ((Runnable) func).run();
+                        return null;
+                    } else if (func instanceof java.util.function.Supplier) {
+                        return ((java.util.function.Supplier<?>) func).get();
+                    } else {
+                        throw new IllegalArgumentException("Unsupported functional interface: " + func.getClass());
+                    }
+                });
+
+        when(aopForTransaction.run(any()))
+                .thenAnswer(invocation -> {
+                    Object func = invocation.getArgument(0);
+                    if (func instanceof Callable) {
+                        return ((Callable<?>) func).call();
+                    } else if (func instanceof Runnable) {
+                        ((Runnable) func).run();
+                        return null;
+                    } else if (func instanceof java.util.function.Supplier) {
+                        return ((java.util.function.Supplier<?>) func).get();
+                    } else {
+                        throw new IllegalArgumentException("Unsupported functional interface: " + func.getClass());
+                    }
+                });
+
+
     }
 
     @Test

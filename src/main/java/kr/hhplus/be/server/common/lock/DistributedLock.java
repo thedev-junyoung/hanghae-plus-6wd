@@ -28,4 +28,10 @@ public @interface DistributedLock {
      * 락 대기 시간 단위
      */
     TimeUnit timeUnit() default TimeUnit.SECONDS;
+
+
+    /**
+     * 락을 걸 Redis Key Prefix
+     */
+    String prefix() default "";
 }

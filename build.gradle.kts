@@ -59,6 +59,9 @@ dependencies {
 
 	// Redis
 	implementation ("org.redisson:redisson-spring-boot-starter:3.24.3")
+	testImplementation("com.github.codemonstur:embedded-redis:1.0.0")
+
+	testImplementation ("org.testcontainers:junit-jupiter:1.19.7")
 
 
 }

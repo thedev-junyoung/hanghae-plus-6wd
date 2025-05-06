@@ -99,7 +99,7 @@ public class CouponConcurrencyTest {
 
         long totalIssued = couponIssueRepository.countByCouponCode(COUPON_CODE);
 
-        System.out.println("\n=== ✅ 결과 요약 ===");
+        System.out.println("\n=== 결과 요약 ===");
         System.out.printf("총 요청 수: %d명\n", CONCURRENCY);
         System.out.printf("총 발급 성공 수: %d명\n", successUsers.size());
         System.out.printf("총 발급 실패 수: %d명\n", failedUsers.size());

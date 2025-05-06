@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.application.balance;
 
+import kr.hhplus.be.server.common.lock.DistributedLock;
 import kr.hhplus.be.server.domain.balance.Balance;
 import kr.hhplus.be.server.domain.balance.BalanceException;
 import kr.hhplus.be.server.domain.balance.BalanceHistoryRepository;
@@ -19,15 +20,9 @@ public class BalanceService implements BalanceUseCase {
 
 
     private final BalanceRepository balanceRepository;
-    private final BalanceHistoryRepository balanceHistoryRepository;
 
     public BalanceInfo charge(ChargeBalanceCommand command) {
-        if (balanceHistoryRepository.existsByRequestId(command.requestId())) {
-            log.warn("이미 처리된 충전 요청입니다: userId={}, requestId={}", command.userId(), command.requestId());
-            Balance existing = balanceRepository.findByUserId(command.userId()).orElseThrow();
-            System.out.println("existing = " + existing);
-            return BalanceInfo.from(existing); // 이전 충전 결과 그대로 반환
-        }
+
 
         Balance balance = balanceRepository.findByUserId(command.userId())
                 .orElseThrow(() -> new BalanceException.NotFoundException(command.userId()));
@@ -50,6 +45,7 @@ public class BalanceService implements BalanceUseCase {
     }
 
     @Override
+    @Transactional
     public boolean decreaseBalance(DecreaseBalanceCommand command) {
         Balance balance = balanceRepository.findByUserId(command.userId())
                 .orElseThrow(() -> new BalanceException.NotFoundException(command.userId()));

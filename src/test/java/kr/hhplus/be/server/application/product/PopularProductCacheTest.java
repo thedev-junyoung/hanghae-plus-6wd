@@ -23,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
-@ActiveProfiles("test")
 @Import(TestRedisCacheConfig.class)  // 명시적으로 import 가능
 class PopularProductCacheTest {
 

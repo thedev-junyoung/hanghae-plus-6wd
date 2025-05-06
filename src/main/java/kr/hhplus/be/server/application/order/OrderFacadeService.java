@@ -4,6 +4,8 @@ import kr.hhplus.be.server.application.coupon.ApplyCouponCommand;
 import kr.hhplus.be.server.application.coupon.ApplyCouponResult;
 import kr.hhplus.be.server.application.coupon.CouponUseCase;
 import kr.hhplus.be.server.application.product.*;
+import kr.hhplus.be.server.common.lock.AopForTransaction;
+import kr.hhplus.be.server.common.lock.DistributedLockExecutor;
 import kr.hhplus.be.server.common.vo.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopContext;
@@ -27,6 +29,9 @@ public class OrderFacadeService {
     private final OrderEventUseCase orderEventService;
     private final CouponUseCase couponUseCase;
     private final StockService stockService;
+    private final DistributedLockExecutor lockExecutor;
+    private final AopForTransaction aopForTransaction;
+
 
     @Transactional
     public OrderResult createOrder(CreateOrderCommand command) {
@@ -37,8 +42,13 @@ public class OrderFacadeService {
         // 2. 각 상품에 대해 주문 상세 구성
         for (CreateOrderCommand.OrderItemCommand item : command.items()) {
             // 2-1. 재고 차감
-            stockService.decrease(DecreaseStockCommand.of(item.productId(), item.size(), item.quantity()));
 
+            lockExecutor.execute("stock:" + item.productId() + ":" + item.size(), () ->
+                    aopForTransaction.run(() -> {
+                        stockService.decrease(DecreaseStockCommand.of(item.productId(), item.size(), item.quantity()));
+                        return null;
+                    })
+            );
             // 2-2. 상품 상세 조회 (가격 포함)
             ProductDetailResult product = productService.getProductDetail(
                     GetProductDetailCommand.of(item.productId(), item.size())

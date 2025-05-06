@@ -38,7 +38,9 @@ public class DistributedLockAspect {
             context.setVariable(paramNames[i], args[i]);
         }
 
-        String lockKey = parser.parseExpression(lockAnnotation.key()).getValue(context, String.class);
+        String resolvedKey = parser.parseExpression(lockAnnotation.key()).getValue(context, String.class);
+        String lockKey = lockAnnotation.prefix() + resolvedKey;
+
         long waitTime = lockAnnotation.waitTime();
         long leaseTime = lockAnnotation.leaseTime();
 
@@ -53,7 +55,10 @@ public class DistributedLockAspect {
 
             // 락을 획득한 다음, 트랜잭션 분리해서 비즈니스 로직 실행
             return aopForTransaction.proceed(joinPoint);
-        } finally {
+        } catch (Exception e) {
+            log.error("분산락 수행 중 예외 발생 - key: {}", lockKey, e);
+            throw e;
+        }finally {
             if (isLocked && lock.isHeldByCurrentThread()) {
                 lock.unlock();
             }

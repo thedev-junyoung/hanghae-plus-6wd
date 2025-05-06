@@ -13,7 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
- 
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,8 +29,6 @@ class BalanceServiceTest {
     @InjectMocks
     BalanceService balanceService;
 
-    @Mock
-    BalanceHistoryRepository balanceHistoryRepository;
 
     @Test
     @DisplayName("잔액을 충전할 수 있다")
