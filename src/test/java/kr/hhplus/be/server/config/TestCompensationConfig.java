@@ -1,14 +1,20 @@
-package kr.hhplus.be.server.application.order;
+package kr.hhplus.be.server.config;
 
-import org.springframework.boot.test.context.TestConfiguration;
+import kr.hhplus.be.server.application.order.CreateOrderCommand;
+import kr.hhplus.be.server.application.order.OrderCompensationService;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 
 import java.util.List;
 
-@TestConfiguration
+@Configuration
+@Profile("test")
 public class TestCompensationConfig {
 
     @Bean
+    @Primary
     public OrderCompensationService stubOrderCompensationService() {
         return new OrderCompensationService(null, null) {
             @Override
