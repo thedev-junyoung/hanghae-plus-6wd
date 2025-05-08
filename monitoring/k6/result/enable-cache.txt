@@ -1,6 +1,4 @@
 [캐시 적용]
-docker exec -it k6 k6 run /scripts/test-cache-enabled.js
-
          /\      Grafana   /‾‾/
     /\  /  \     |\  __   /  /
    /  \/    \    | |/ /  /   ‾‾\

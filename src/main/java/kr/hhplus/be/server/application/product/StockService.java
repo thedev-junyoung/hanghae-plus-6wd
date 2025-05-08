@@ -11,7 +11,6 @@ public class StockService {
 
     private final ProductStockRepository productStockRepository;
 
-    @Transactional
     public void decrease(DecreaseStockCommand command) {
 //        ProductStock stock = productStockRepository.findByProductIdAndSizeForUpdate(command.productId(), command.size())
         ProductStock stock = productStockRepository.findByProductIdAndSize(command.productId(), command.size())

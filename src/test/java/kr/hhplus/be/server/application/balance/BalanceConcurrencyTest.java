@@ -58,7 +58,6 @@ public class BalanceConcurrencyTest {
     private final AtomicInteger successCount = new AtomicInteger(0);
 
     @BeforeEach
-    @Transactional
     void setUp() {
         initializeBalance(USER_ID);
     }
@@ -102,9 +101,9 @@ public class BalanceConcurrencyTest {
         System.out.println("실제 잔액: " + finalAmount);
 
         assertThat(finalAmount).isEqualTo(successCount.get() * CHARGE_AMOUNT);
+
     }
 
-    @Transactional
     public void initializeBalance(Long userId) {
         balanceRepository.findByUserId(userId).ifPresentOrElse(
                 balance -> {

@@ -33,7 +33,6 @@ public class OrderFacadeService {
     private final AopForTransaction aopForTransaction;
 
 
-    @Transactional
     public OrderResult createOrder(CreateOrderCommand command) {
         // 1. 초기화 - 전체 금액 및 주문 아이템 리스트 준비
         Money total = Money.wons(0L);

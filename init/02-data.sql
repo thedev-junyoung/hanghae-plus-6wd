@@ -115,6 +115,16 @@ VALUES
     (11, CURRENT_DATE, 1, 249000),
     (12, CURRENT_DATE, 1, 239000);
 
+REPLACE INTO product_statistics (product_id, stat_date, sales_count, sales_amount)
+SELECT
+    FLOOR(13 + RAND() * 99987),            -- 13번부터 시작하는 상품 ID
+    CURRENT_DATE,
+    FLOOR(1 + RAND() * 10),                -- 판매 수 (1~10)
+    FLOOR(10000 + RAND() * 100000)         -- 판매 금액 (10,000 ~ 110,000)
+FROM
+    information_schema.tables t1,
+    information_schema.tables t2
+LIMIT 50000;
 
 
 

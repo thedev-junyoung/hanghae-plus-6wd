@@ -1,5 +1,4 @@
 [캐시 미적용]
-docker exec -it k6 k6 run /scripts/test-cache-disabled.js
          /\      Grafana   /‾‾/
     /\  /  \     |\  __   /  /
    /  \/    \    | |/ /  /   ‾‾\
@@ -13,35 +12,34 @@ docker exec -it k6 k6 run /scripts/test-cache-disabled.js
      scenarios: (100.00%) 1 scenario, 20 max VUs, 40s max duration (incl. graceful stop):
               * default: 20 looping VUs for 10s (gracefulStop: 30s)
 
-WARN[0000] Error from API server                         error="listen tcp 127.0.0.1:6565: bind: address already in use"
 
 
   █ TOTAL RESULTS
 
-    checks_total.......................: 4433    442.419169/s
-    checks_succeeded...................: 100.00% 4433 out of 4433
-    checks_failed......................: 0.00%   0 out of 4433
+    checks_total.......................: 253     24.479737/s
+    checks_succeeded...................: 100.00% 253 out of 253
+    checks_failed......................: 0.00%   0 out of 253
 
     ✓ status is 200
 
     HTTP
-    http_req_duration.......................................................: avg=44.97ms min=10.4ms  med=41.75ms max=221.12ms p(90)=67.72ms p(95)=78.16ms
-      { expected_response:true }............................................: avg=44.97ms min=10.4ms  med=41.75ms max=221.12ms p(90)=67.72ms p(95)=78.16ms
-    http_req_failed.........................................................: 0.00%  0 out of 4433
-    http_reqs...............................................................: 4433   442.419169/s
+    http_req_duration.......................................................: avg=805.43ms min=336.4ms  med=793.83ms max=1.43s p(90)=981.51ms p(95)=1.07s
+      { expected_response:true }............................................: avg=805.43ms min=336.4ms  med=793.83ms max=1.43s p(90)=981.51ms p(95)=1.07s
+    http_req_failed.........................................................: 0.00%  0 out of 253
+    http_reqs...............................................................: 253    24.479737/s
 
     EXECUTION
-    iteration_duration......................................................: avg=45.16ms min=10.45ms med=41.98ms max=221.21ms p(90)=67.76ms p(95)=78.39ms
-    iterations..............................................................: 4433   442.419169/s
-    vus.....................................................................: 20     min=20        max=20
-    vus_max.................................................................: 20     min=20        max=20
+    iteration_duration......................................................: avg=805.86ms min=336.58ms med=794.08ms max=1.44s p(90)=981.96ms p(95)=1.07s
+    iterations..............................................................: 253    24.479737/s
+    vus.....................................................................: 20     min=20       max=20
+    vus_max.................................................................: 20     min=20       max=20
 
     NETWORK
-    data_received...........................................................: 2.0 MB 202 kB/s
-    data_sent...............................................................: 594 kB 59 kB/s
+    data_received...........................................................: 115 kB 11 kB/s
+    data_sent...............................................................: 34 kB  3.3 kB/s
 
 
 
 
-running (10.0s), 00/20 VUs, 4433 complete and 0 interrupted iterations
+running (10.3s), 00/20 VUs, 253 complete and 0 interrupted iterations
 default ✓ [======================================] 20 VUs  10s
