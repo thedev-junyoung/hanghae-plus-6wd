@@ -31,4 +31,20 @@ public record PaymentResult(
                 info.createdAt()
         );
     }
+
+    public static PaymentResult success(
+            String orderId,
+            long amount,
+            String method
+    ) {
+        return new PaymentResult(
+                null,
+                orderId,
+                amount,
+                method,
+                "SUCCESS",
+                LocalDateTime.now()
+        );
+    }
+
 }

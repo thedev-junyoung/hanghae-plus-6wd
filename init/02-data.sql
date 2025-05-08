@@ -39,10 +39,28 @@ VALUES
 ;
 
 -- Balance
-INSERT INTO balance (id, user_id, amount, created_at, updated_at)
-VALUES
-    (1, 100, 500000, NOW(), NOW()),
-    (2, 101, 300000, NOW(), NOW());
+INSERT INTO balance (id, user_id, amount, created_at, updated_at) VALUES
+(1, 100, 500000, NOW(), NOW()),
+(2, 101, 300000, NOW(), NOW()),
+(3, 102, 300000, NOW(), NOW()),
+(4, 103, 300000, NOW(), NOW()),
+(5, 104, 300000, NOW(), NOW()),
+(6, 105, 300000, NOW(), NOW()),
+(7, 106, 300000, NOW(), NOW()),
+(8, 107, 300000, NOW(), NOW()),
+(9, 108, 300000, NOW(), NOW()),
+(10, 109, 300000, NOW(), NOW());
+
+INSERT INTO balance (user_id, amount, created_at, updated_at)
+SELECT 10000 + id, 100000, NOW(), NOW()
+FROM (
+         SELECT @row := @row + 1 AS id
+         FROM information_schema.tables t1,
+             information_schema.tables t2,
+             (SELECT @row := 0) r
+             LIMIT 100
+     ) temp;
+
 
 -- Coupon
 INSERT INTO coupon (id, code, type, discount_rate, total_quantity, remaining_quantity, valid_from, valid_until)
@@ -84,8 +102,29 @@ VALUES
 -- Product Statistics
 INSERT INTO product_statistics (product_id, stat_date, sales_count, sales_amount)
 VALUES
-    (1, CURRENT_DATE, 1, 199000),
-    (2, CURRENT_DATE, 1, 169000);
+    (1, CURRENT_DATE, 10, 199000),
+    (2, CURRENT_DATE, 5, 169000),
+    (3, CURRENT_DATE, 4, 129000),
+    (4, CURRENT_DATE, 1, 109000),
+    (5, CURRENT_DATE, 9, 139000),
+    (6, CURRENT_DATE, 11, 185000),
+    (7, CURRENT_DATE, 18, 129000),
+    (8, CURRENT_DATE, 2, 85000),
+    (9, CURRENT_DATE, 1, 69000),
+    (10, CURRENT_DATE, 1, 99000),
+    (11, CURRENT_DATE, 1, 249000),
+    (12, CURRENT_DATE, 1, 239000);
+
+REPLACE INTO product_statistics (product_id, stat_date, sales_count, sales_amount)
+SELECT
+    FLOOR(13 + RAND() * 99987),            -- 13번부터 시작하는 상품 ID
+    CURRENT_DATE,
+    FLOOR(1 + RAND() * 10),                -- 판매 수 (1~10)
+    FLOOR(10000 + RAND() * 100000)         -- 판매 금액 (10,000 ~ 110,000)
+FROM
+    information_schema.tables t1,
+    information_schema.tables t2
+LIMIT 50000;
 
 
 

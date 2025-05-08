@@ -13,7 +13,7 @@ public class OrderEventService implements OrderEventUseCase {
     private final OrderEventRepository repository;
 
     public void recordPaymentCompletedEvent(Order order) {
-        OrderEvent event = OrderEvent.paymentCompleted(order);  // 📌 도메인 객체 사용
+        OrderEvent event = OrderEvent.paymentCompleted(order);
         repository.save(event);
     }
 }

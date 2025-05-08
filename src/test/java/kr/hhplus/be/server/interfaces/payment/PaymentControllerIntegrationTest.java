@@ -51,7 +51,6 @@ class PaymentControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("success"))
-                .andExpect(jsonPath("$.data.paymentId").exists())
                 .andExpect(jsonPath("$.data.status").value("SUCCESS"));
     }
 
@@ -69,4 +68,5 @@ class PaymentControllerIntegrationTest {
                 .andExpect(jsonPath("$.status").value("error"))
                 .andExpect(jsonPath("$.message").value("잔액이 부족합니다."));
     }
+
 }

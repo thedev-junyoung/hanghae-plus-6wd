@@ -1,11 +1,7 @@
 package kr.hhplus.be.server.application.order;
 
-import kr.hhplus.be.server.application.coupon.ApplyCouponCommand;
-import kr.hhplus.be.server.application.coupon.ApplyCouponResult;
 import kr.hhplus.be.server.application.coupon.CouponUseCase;
-import kr.hhplus.be.server.application.product.*;
 import kr.hhplus.be.server.common.vo.Money;
-import kr.hhplus.be.server.domain.coupon.CouponType;
 import kr.hhplus.be.server.domain.order.Order;
 import kr.hhplus.be.server.domain.order.OrderItem;
 import kr.hhplus.be.server.domain.order.OrderStatus;
@@ -17,27 +13,32 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.any;
 
 class OrderFacadeServiceTest {
 
-    private ProductService productService;
-    private OrderService orderService;
-    private OrderEventService orderEventService;
+    private OrderUseCase orderService;
+    private OrderEventUseCase orderEventService;
     private CouponUseCase couponUseCase;
-    private StockService stockService;
+    private OrderItemCreator orderItemCreator;
+    private OrderCompensationService compensationService;
 
     private OrderFacadeService orderFacadeService;
 
     @BeforeEach
     void setUp() {
-        productService = mock(ProductService.class);
-        orderService = mock(OrderService.class);
-        orderEventService = mock(OrderEventService.class);
+        orderService = mock(OrderUseCase.class);
+        orderEventService = mock(OrderEventUseCase.class);
         couponUseCase = mock(CouponUseCase.class);
-        stockService = mock(StockService.class);
+        orderItemCreator = mock(OrderItemCreator.class);
+        compensationService = mock(OrderCompensationService.class);
 
-        orderFacadeService = new OrderFacadeService(productService, orderService, orderEventService, couponUseCase, stockService);
+        orderFacadeService = new OrderFacadeService(
+                orderItemCreator,
+                orderService,
+                orderEventService,
+                couponUseCase,
+                compensationService
+        );
     }
 
     @Test
@@ -48,33 +49,21 @@ class OrderFacadeServiceTest {
         Long productId = 1001L;
         int quantity = 2;
         int size = 270;
-        long price = 5000;
+        long unitPrice = 5000;
         String couponCode = "DISCOUNT10";
-        long discountAmount = 2000;
 
         CreateOrderCommand.OrderItemCommand itemCommand = new CreateOrderCommand.OrderItemCommand(productId, quantity, size);
         CreateOrderCommand command = new CreateOrderCommand(userId, List.of(itemCommand), couponCode);
 
-        ProductDetailResult productResult = new ProductDetailResult(
-                new ProductInfo(productId, "Test Product", price, 10)
-        );
+        List<OrderItem> orderItems = List.of(OrderItem.of(productId, quantity, size, Money.wons(unitPrice)));
+        Money originalTotal = Money.wons(unitPrice * quantity);
+        Money discountedTotal = originalTotal.subtract(Money.wons(2000));
 
-        ApplyCouponResult couponResult = new ApplyCouponResult(
-                couponCode,
-                CouponType.FIXED,
-                2000,
-                Money.wons(discountAmount)
-        );
+        Order order = Order.create(userId, orderItems, discountedTotal);
 
-        Money originalTotal = Money.wons(price * quantity);
-        Money discountedTotal = originalTotal.subtract(couponResult.discountAmount());
-
-        when(productService.getProductDetail(any(GetProductDetailCommand.class))).thenReturn(productResult);
-        when(couponUseCase.applyCoupon(any(ApplyCouponCommand.class))).thenReturn(couponResult);
-        when(orderService.createOrder(eq(userId), anyList(), eq(discountedTotal)))
-                .thenReturn(Order.create(userId,
-                        List.of(OrderItem.of(productId, quantity, size, Money.wons(4000))), // 할인 적용된 가격
-                        discountedTotal));
+        when(orderItemCreator.createOrderItems(command.items())).thenReturn(orderItems);
+        when(couponUseCase.calculateDiscountedTotal(command, orderItems)).thenReturn(discountedTotal);
+        when(orderService.createOrder(userId, orderItems, discountedTotal)).thenReturn(order);
 
         // when
         OrderResult result = orderFacadeService.createOrder(command);
@@ -86,11 +75,11 @@ class OrderFacadeServiceTest {
         assertThat(result.items()).hasSize(1);
         assertThat(result.status()).isEqualTo(OrderStatus.CREATED);
 
-        // verify interactions
-        verify(productService).getProductDetail(any(GetProductDetailCommand.class));
-        verify(couponUseCase).applyCoupon(any(ApplyCouponCommand.class));
-        verify(orderService).createOrder(eq(userId), anyList(), eq(discountedTotal));
-        verify(orderEventService).recordPaymentCompletedEvent(any(Order.class));
-        verify(stockService).decrease(any(DecreaseStockCommand.class));
+        // verify
+        verify(orderItemCreator).createOrderItems(command.items());
+        verify(couponUseCase).calculateDiscountedTotal(command, orderItems);
+        verify(orderService).createOrder(userId, orderItems, discountedTotal);
+        verify(orderEventService).recordPaymentCompletedEvent(order);
+        verifyNoInteractions(compensationService);
     }
 }

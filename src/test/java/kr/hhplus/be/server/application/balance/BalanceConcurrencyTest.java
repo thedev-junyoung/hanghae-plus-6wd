@@ -8,7 +8,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -16,26 +15,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 /**
- * 낙관적 락 기반의 동시성 충전 테스트 클래스.
+ * Redis 기반 분산락을 활용한 잔액 충전 동시성 테스트.
  *
- * <p>이 테스트는 동일 사용자에 대해 동시에 충전 요청이 들어오는 상황을 시뮬레이션한다.</p>
+ * <p>동일 사용자의 충전 요청이 동시에 발생할 때 Race Condition 없이 정확하게 처리되는지 검증한다.</p>
  *
- * <p>적용된 동시성 제어 방식:</p>
+ * <p><b>적용된 동시성 제어 전략:</b></p>
  * <ul>
- *   <li>JPA의 `@Version`을 활용한 낙관적 락</li>
- *   <li>Spring Retry의 `@Retryable`로 충돌 시 재시도</li>
- *   <li>각 요청마다 `requestId`를 부여하여 멱등성 보장</li>
- *   <li>InMemoryRateLimiter로 짧은 시간 내 중복 요청 방지</li>
+ *   <li><b>Redisson 분산락</b> : key = "balance:charge:{userId}". 락 획득 후에만 충전 로직 진입</li>
+ *   <li><b>트랜잭션 경계</b> : 락 획득 후 AOP를 통해 @Transactional(REQUIRES_NEW) 시작</li>
+ *   <li><b>비즈니스 로직</b> : 잔액 조회 및 금액 충전 → 저장</li>
+ *   <li><b>멱등성 보장</b> : requestId 기반으로 중복 요청 차단</li>
+ *   <li><b>Rate Limiting</b> : InMemoryRateLimiter로 과도한 반복 요청 차단</li>
+ *   <li><b>이벤트 발행</b> : 커밋 후 BalanceChargedEvent 발행 → 충전 이력 기록</li>
  * </ul>
  *
- * <p>검증 포인트:</p>
+ * <p><b>검증 포인트:</b></p>
  * <ul>
- *   <li>모든 충전 요청이 중복 없이 정확하게 누적된다</li>
- *   <li>최종 잔액 = 성공한 요청 수 × 충전 금액</li>
+ *   <li>모든 충전 요청이 정확히 한 번씩만 처리된다.</li>
+ *   <li>최종 잔액 = 성공한 요청 수 × 충전 금액.</li>
+ *   <li>로그를 통해 락 → 트랜잭션 → 로직 → 커밋 → 이벤트 → 락 해제 순서를 확인한다.</li>
  * </ul>
  */
+
+
 @SpringBootTest
 public class BalanceConcurrencyTest {
 
@@ -52,7 +55,6 @@ public class BalanceConcurrencyTest {
     private final AtomicInteger successCount = new AtomicInteger(0);
 
     @BeforeEach
-    @Transactional
     void setUp() {
         initializeBalance(USER_ID);
     }
@@ -96,9 +98,91 @@ public class BalanceConcurrencyTest {
         System.out.println("실제 잔액: " + finalAmount);
 
         assertThat(finalAmount).isEqualTo(successCount.get() * CHARGE_AMOUNT);
+
+    }
+    @Test
+    @DisplayName("동일 유저 1명에 대해 동시 충전 요청이 정확히 처리된다")
+    void singleUser_multipleRequests() throws Exception {
+        long userId = 777L;
+        int threadCount = 50; // 같은 유저 50개 요청
+
+        executeConcurrentChargeTest(userId, threadCount);
     }
 
-    @Transactional
+    @Test
+    @DisplayName("다수 유저가 동시에 충전 요청하면 각각 정확히 처리된다")
+    void multipleUsers_concurrentRequests() throws Exception {
+        int userCount = 10;
+        int requestsPerUser = 10;
+
+        ExecutorService executor = Executors.newFixedThreadPool(userCount * requestsPerUser);
+        CountDownLatch latch = new CountDownLatch(userCount * requestsPerUser);
+
+        for (long userId = 1000; userId < 1000 + userCount; userId++) {
+            initializeBalance(userId);
+
+            for (int i = 0; i < requestsPerUser; i++) {
+                long finalUserId = userId;
+                executor.execute(() -> {
+                    try {
+                        String requestId = "REQ-" + UUID.randomUUID();
+                        ChargeBalanceCriteria criteria = ChargeBalanceCriteria.of(
+                                finalUserId, CHARGE_AMOUNT, "멀티유저 동시 충전 테스트", requestId
+                        );
+
+                        balanceFacade.charge(criteria);
+                    } catch (Exception e) {
+                        System.out.println("충전 실패: " + e.getMessage());
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+        }
+
+        latch.await();
+        executor.shutdown();
+
+        // 검증 - 각 유저의 잔액 확인
+        for (long userId = 1000; userId < 1000 + userCount; userId++) {
+            long amount = balanceRepository.findByUserId(userId)
+                    .orElseThrow().getAmount();
+            assertThat(amount).isEqualTo(CHARGE_AMOUNT * requestsPerUser);
+        }
+    }
+
+    private void executeConcurrentChargeTest(Long userId, int requestCount) throws InterruptedException {
+        ExecutorService executor = Executors.newFixedThreadPool(requestCount);
+        CountDownLatch latch = new CountDownLatch(requestCount);
+
+        for (int i = 0; i < requestCount; i++) {
+            executor.execute(() -> {
+                try {
+                    String requestId = "REQ-" + UUID.randomUUID();
+                    ChargeBalanceCriteria criteria = ChargeBalanceCriteria.of(
+                            userId, CHARGE_AMOUNT, "동시성 테스트 충전", requestId
+                    );
+
+                    balanceFacade.charge(criteria);
+                } catch (Exception e) {
+                    System.out.println("충전 실패: " + e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executor.shutdown();
+
+        long finalAmount = balanceRepository.findByUserId(userId)
+                .orElseThrow().getAmount();
+
+        System.out.println("최종 잔액: " + finalAmount);
+        assertThat(finalAmount).isEqualTo(CHARGE_AMOUNT * requestCount);
+    }
+
+
     public void initializeBalance(Long userId) {
         balanceRepository.findByUserId(userId).ifPresentOrElse(
                 balance -> {

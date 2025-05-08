@@ -103,11 +103,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(OptimisticLockingFailureException.class)
     protected ResponseEntity<CustomApiResponse<Object>> handleOptimisticLockingFailureException(OptimisticLockingFailureException e) {
-        log.error("handleOptimisticLockingFailureException", e);
-        final CustomApiResponse<Object> response = CustomApiResponse.error(
-                ErrorCode.CONCURRENT_REQUEST.getMessage()
-        );
-        return ResponseEntity.status(ErrorCode.CONCURRENT_REQUEST.getStatus()).body(response);
+        log.warn("[OptimisticLock 재시도 실패] {}", e.getMessage());
+        final CustomApiResponse<Object> response = CustomApiResponse.error("충전이 너무 많이 요청되어 실패했습니다. 다시 시도해주세요.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     /**
@@ -144,6 +142,23 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(ErrorCode.TOO_MANY_REQUESTS.getStatus()).body(response);
     }
+
+
+    /**
+     * 락 획득 실패 예외 처리 (분산락 실패 등)
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    protected ResponseEntity<CustomApiResponse<Object>> handleIllegalStateException(IllegalStateException e) {
+        if (e.getMessage() != null && e.getMessage().startsWith("락 획득 실패")) {
+            log.warn("[락 획득 실패] {}", e.getMessage());
+            final CustomApiResponse<Object> response = CustomApiResponse.error("잠시 후 다시 시도해주세요. (락 획득 실패)");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+        log.error("handleIllegalStateException", e);
+        final CustomApiResponse<Object> response = CustomApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
 
 
     private List<String> createFieldErrorDetails(BindingResult bindingResult) {

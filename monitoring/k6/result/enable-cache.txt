@@ -1,0 +1,45 @@
+[캐시 적용]
+         /\      Grafana   /‾‾/
+    /\  /  \     |\  __   /  /
+   /  \/    \    | |/ /  /   ‾‾\
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/
+
+     execution: local
+        script: /scripts/test-cache-enabled.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 20 max VUs, 40s max duration (incl. graceful stop):
+              * default: 20 looping VUs for 10s (gracefulStop: 30s)
+
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......................: 27369   2734.478572/s
+    checks_succeeded...................: 100.00% 27369 out of 27369
+    checks_failed......................: 0.00%   0 out of 27369
+
+    ✓ status is 200
+
+    HTTP
+    http_req_duration.......................................................: avg=7.17ms min=1.04ms med=6.8ms  max=75.52ms p(90)=10.65ms p(95)=12.37ms
+      { expected_response:true }............................................: avg=7.17ms min=1.04ms med=6.8ms  max=75.52ms p(90)=10.65ms p(95)=12.37ms
+    http_req_failed.........................................................: 0.00%  0 out of 27369
+    http_reqs...............................................................: 27369  2734.478572/s
+
+    EXECUTION
+    iteration_duration......................................................: avg=7.3ms  min=1.26ms med=6.91ms max=75.6ms  p(90)=10.84ms p(95)=12.6ms
+    iterations..............................................................: 27369  2734.478572/s
+    vus.....................................................................: 20     min=20         max=20
+    vus_max.................................................................: 20     min=20         max=20
+
+    NETWORK
+    data_received...........................................................: 13 MB  1.2 MB/s
+    data_sent...............................................................: 3.3 MB 328 kB/s
+
+
+
+
+running (10.0s), 00/20 VUs, 27369 complete and 0 interrupted iterations
+default ✓ [====================================] 20 VUs  10s

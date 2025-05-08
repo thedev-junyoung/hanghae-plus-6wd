@@ -44,4 +44,47 @@ class BalanceHistoryServiceTest {
         assertThat(saved.getType()).isEqualTo(BalanceChangeType.CHARGE);
         assertThat(saved.getReason()).isEqualTo("테스트 충전");
     }
+
+    @Test
+    @DisplayName("중복된 요청 ID로 잔액 변경 내역 기록 - 무시")
+    void recordHistory_duplicateRequestId() {
+        // given
+        String requestId = "REQ-12345";
+        RecordBalanceHistoryCommand command = new RecordBalanceHistoryCommand(
+                100L, 2000L, BalanceChangeType.CHARGE, "테스트 충전", requestId
+        );
+
+        when(repository.existsByRequestId(requestId)).thenReturn(true);
+
+        // when
+        service.recordHistory(command);
+
+        // then
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("중복된 요청 ID로 잔액 변경 내역 기록 - 성공")
+    void recordHistory_successWithDuplicateRequestId() {
+        // given
+        String requestId = "REQ-12345";
+        RecordBalanceHistoryCommand command = new RecordBalanceHistoryCommand(
+                100L, 2000L, BalanceChangeType.CHARGE, "테스트 충전", requestId
+        );
+
+        when(repository.existsByRequestId(requestId)).thenReturn(false);
+
+        // when
+        service.recordHistory(command);
+
+        // then
+        ArgumentCaptor<BalanceHistory> captor = ArgumentCaptor.forClass(BalanceHistory.class);
+        verify(repository, times(1)).save(captor.capture());
+
+        BalanceHistory saved = captor.getValue();
+        assertThat(saved.getUserId()).isEqualTo(100L);
+        assertThat(saved.getAmount()).isEqualTo(2000L);
+        assertThat(saved.getType()).isEqualTo(BalanceChangeType.CHARGE);
+        assertThat(saved.getReason()).isEqualTo("테스트 충전");
+    }
 }

@@ -7,6 +7,7 @@ import java.util.Objects;
 
 @Value
 public class Money {
+    public static final Money ZERO = Money.from(0);
     @JsonValue
     long value;
     @JsonCreator
@@ -40,7 +41,9 @@ public class Money {
     public boolean isGreaterThanOrEqual(Money other) {
         return this.value >= other.value;
     }
-
+    public boolean isGreaterThan(Money actualTotal) {
+        return this.value > actualTotal.value;
+    }
     public long value() {
         return value;
     }
@@ -68,5 +71,6 @@ public class Money {
     public boolean isNegative() {
         return this.value < 0;
     }
+
 
 }

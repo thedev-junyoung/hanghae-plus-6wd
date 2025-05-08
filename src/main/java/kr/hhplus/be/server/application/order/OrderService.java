@@ -32,6 +32,7 @@ public class OrderService implements OrderUseCase {
         return order;
     }
 
+    @Transactional
     public void markConfirmed(Order order) {
         order.markConfirmed();
         orderRepository.save(order);
@@ -39,10 +40,12 @@ public class OrderService implements OrderUseCase {
 
     @Transactional
     public Order getOrderForPaymentWithLock(String orderId) {
-        Order order = orderRepository.findByIdForUpdate(orderId)
+//        Order order = orderRepository.findByIdForUpdate(orderId)
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderException.NotFoundException(orderId));
         order.validatePayable();
         return order;
     }
+
 }
 

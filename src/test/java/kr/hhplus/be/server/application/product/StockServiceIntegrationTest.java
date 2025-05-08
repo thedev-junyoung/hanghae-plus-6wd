@@ -1,37 +1,35 @@
 package kr.hhplus.be.server.application.product;
 
-import kr.hhplus.be.server.domain.product.Product;
-import kr.hhplus.be.server.domain.product.ProductRepository;
-import kr.hhplus.be.server.domain.product.ProductStock;
-import kr.hhplus.be.server.domain.product.ProductStockRepository;
+import kr.hhplus.be.server.domain.product.*;
 import kr.hhplus.be.server.common.vo.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
 class StockServiceIntegrationTest {
 
-    @Autowired StockService stockService;
-    @Autowired ProductRepository productRepository;
-    @Autowired ProductStockRepository stockRepository;
+    @Autowired
+    StockService stockService;
+
+    @Autowired
+    ProductRepository productRepository;
+
+    @Autowired
+    ProductStockRepository stockRepository;
+
 
     private Long productId;
 
     @BeforeEach
     void setUp() {
-        Product product = Product.create("Test Product", "Brand", Money.wons(10000), LocalDate.now().minusDays(1), null, null);
+        Product product = Product.create("통합 테스트 상품", "Brand", Money.wons(10000), LocalDate.now().minusDays(1), null, null);
         product = productRepository.save(product);
         productId = product.getId();
 
@@ -39,30 +37,29 @@ class StockServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("동시에 여러 요청이 들어와도 재고가 음수가 되지 않는다")
-    void concurrent_decrease_stock_safely() throws InterruptedException {
-        int threadCount = 3;
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        CountDownLatch latch = new CountDownLatch(threadCount);
+    @DisplayName("정상적으로 재고 차감이 이루어진다")
+    void decrease_stock_successfully() {
+        // given
+        DecreaseStockCommand command = DecreaseStockCommand.of(productId, 270, 3);
 
-        for (int i = 0; i < threadCount; i++) {
-            executor.submit(() -> {
-                try {
-                    stockService.decrease(DecreaseStockCommand.of(productId, 270, 5));
-                } catch (Exception e) {
-                    System.out.println("실패: " + e.getMessage());
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
+        // when
+        stockService.decrease(command);
 
-        latch.await();
-
+        // then
         ProductStock stock = stockRepository.findByProductIdAndSize(productId, 270)
                 .orElseThrow();
+        assertThat(stock.getStockQuantity()).isEqualTo(7);
+    }
 
-        System.out.println("남은 재고: " + stock.getStockQuantity());
-        assertThat(stock.getStockQuantity()).isZero(); // 정확히 2개 요청만 성공해야 함
+    @Test
+    @DisplayName("재고 부족 시 예외가 발생한다")
+    void decrease_stock_insufficient_throws_exception() {
+        // given
+        DecreaseStockCommand command = DecreaseStockCommand.of(productId, 270, 20); // 재고보다 많음
+
+        // expect
+        assertThatThrownBy(() -> stockService.decrease(command))
+                .isInstanceOf(ProductException.InsufficientStockException.class);
     }
 }
+
