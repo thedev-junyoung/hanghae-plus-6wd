@@ -32,7 +32,7 @@ class BalanceFacadeIntegrationTest {
     private BalanceHistoryRepository balanceHistoryRepository;
 
     @Test
-    @DisplayName("충전 성공 - DB에 이미 존재하는 유저, 이벤트 기반 이력 기록 확인")
+    @DisplayName("충전 성공 - DB에 이미 존재하는 유저")
     void charge_success_using_seeded_data() {
         // given
         Long userId = 100L;

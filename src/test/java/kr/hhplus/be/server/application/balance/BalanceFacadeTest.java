@@ -35,19 +35,13 @@ class BalanceFacadeTest {
     private InMemoryRateLimiter rateLimiter;
 
     @Mock
-    private ApplicationEventPublisher eventPublisher;
-
-    @Mock
     private DistributedLockExecutor lockExecutor;
-
-    @Mock
-    private AopForTransaction aopForTransaction;
 
     @InjectMocks
     private BalanceFacade balanceFacade;
 
     @Test
-    @DisplayName("충전 성공 시 이벤트가 발행된다")
+    @DisplayName("충전 성공 시 잔액이 증가한다")
     void charge_shouldPublishBalanceChargedEvent() throws Exception {
         // given
         String requestId = "REQ-123";
@@ -58,27 +52,12 @@ class BalanceFacadeTest {
         when(historyUseCase.findIfDuplicatedRequest(requestId, 1L)).thenReturn(Optional.empty());
         when(retryService.chargeWithRetry(command)).thenReturn(fakeInfo);
 
-        // 분산락 모킹
-        when(lockExecutor.execute(eq("balance:charge:1"), any(Callable.class)))
-                .thenAnswer(invocation -> {
-                    Callable<?> callable = invocation.getArgument(1);
-                    return callable.call();
-                });
-
-        // AOP 트랜잭션 감싼 부분도 모킹
-        when(aopForTransaction.run(any(Supplier.class)))
-                .thenAnswer(invocation -> {
-                    Supplier<?> supplier = invocation.getArgument(0);
-                    return supplier.get();
-                });
-
         // when
         BalanceResult result = balanceFacade.charge(criteria);
 
         // then
         verify(rateLimiter).validate(1L);
         verify(retryService).chargeWithRetry(command);
-        verify(eventPublisher).publishEvent(BalanceChargedEvent.from(criteria));
 
         assertThat(result.userId()).isEqualTo(1L);
         assertThat(result.balance()).isEqualTo(20000L);

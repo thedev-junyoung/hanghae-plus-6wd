@@ -46,13 +46,12 @@ public class DistributedLockAspect {
 
         RLock lock = redissonClient.getLock(lockKey);
         boolean isLocked = false;
-
         try {
+            log.info("락 획득 - key: {}", lockKey);
             isLocked = lock.tryLock(waitTime, leaseTime, TimeUnit.SECONDS);
             if (!isLocked) {
                 throw new IllegalStateException("락 획득 실패: " + lockKey);
             }
-
             // 락을 획득한 다음, 트랜잭션 분리해서 비즈니스 로직 실행
             return aopForTransaction.proceed(joinPoint);
         } catch (Exception e) {

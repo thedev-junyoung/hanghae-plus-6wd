@@ -6,12 +6,12 @@ public record BalanceChargedEvent(
         String reason,
         String requestId
 ) {
-    public static BalanceChargedEvent from(ChargeBalanceCriteria criteria) {
+    public static BalanceChargedEvent from(ChargeBalanceCommand command) {
         return new BalanceChargedEvent(
-                criteria.userId(),
-                criteria.amount(),
-                criteria.reason(),
-                criteria.requestId()
+                command.userId(),
+                command.amount(),
+                command.reason(),
+                command.requestId()
         );
     }
 }

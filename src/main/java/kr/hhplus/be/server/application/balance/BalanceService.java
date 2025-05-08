@@ -8,6 +8,8 @@ import kr.hhplus.be.server.domain.balance.BalanceRepository;
 import kr.hhplus.be.server.common.vo.Money;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.actuate.autoconfigure.tracing.OpenTelemetryTracingAutoConfiguration;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,16 +22,24 @@ public class BalanceService implements BalanceUseCase {
 
 
     private final BalanceRepository balanceRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     public BalanceInfo charge(ChargeBalanceCommand command) {
-
+        log.info("[비즈니스 로직 시작] userId={}, amount={}", command.userId(), command.amount());
 
         Balance balance = balanceRepository.findByUserId(command.userId())
                 .orElseThrow(() -> new BalanceException.NotFoundException(command.userId()));
 
         balance.charge(Money.wons(command.amount()));
+
+        log.info("[DB 저장 직전] userId={}, newAmount={}", command.userId(), balance.getAmount());
+
         balanceRepository.save(balance);
-        System.out.println("balance = " + balance);
+
+        log.info("잔액 충전 완료: userId={}, amount={}", command.userId(), balance.getAmount());
+        eventPublisher.publishEvent(BalanceChargedEvent.from(command));
+
         return BalanceInfo.from(balance);
     }
 
