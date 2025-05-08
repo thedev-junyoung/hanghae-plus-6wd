@@ -69,5 +69,10 @@ public class ProductService implements ProductUseCase {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException.NotFoundException(productId));
     }
+
+    @Override
+    public List<Product> findProductsByIds(List<Long> productIds) {
+        return productRepository.findAllById(productIds);
+    }
 }
 
