@@ -37,7 +37,9 @@ public class RedissonDistributedLockExecutor implements DistributedLockExecutor 
             throw new RuntimeException("예상치 못한 예외", e);
         } finally {
             if (isLocked && lock.isHeldByCurrentThread()) {
+                log.info("락 해제 - key: {}", lock);
                 lock.unlock();
+
             }
         }
     }

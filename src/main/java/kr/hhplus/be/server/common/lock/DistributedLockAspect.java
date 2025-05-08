@@ -60,6 +60,7 @@ public class DistributedLockAspect {
             throw e;
         }finally {
             if (isLocked && lock.isHeldByCurrentThread()) {
+                log.info("락 해제 - key: {}", lockKey);
                 lock.unlock();
             }
         }

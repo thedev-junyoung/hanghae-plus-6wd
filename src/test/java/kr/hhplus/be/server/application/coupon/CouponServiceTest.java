@@ -35,13 +35,6 @@ class CouponServiceTest {
     @Mock
     private CouponIssueRepository couponIssueRepository;
 
-    @Mock
-    private AopForTransaction aopForTransaction;
-
-    @Mock
-    private DistributedLockExecutor distributedLockExecutor;
-
-
     private CouponService couponService;
 
     private Clock fixedClock;
@@ -52,7 +45,7 @@ class CouponServiceTest {
     @BeforeEach
     void setUp() {
         fixedClock = Clock.fixed(Instant.parse("2025-04-27T00:00:00Z"), ZoneId.of("UTC"));
-        couponService = new CouponService(couponRepository, couponIssueRepository, fixedClock, distributedLockExecutor, aopForTransaction);
+        couponService = new CouponService(couponRepository, couponIssueRepository, fixedClock);
 
     }
 
@@ -104,16 +97,6 @@ class CouponServiceTest {
 
         given(couponRepository.findByCode(couponCode)).willReturn(expiredCoupon);
 
-        doAnswer(invocation -> {
-            Callable<?> callable = invocation.getArgument(1, Callable.class);
-            return callable.call();
-        }).when(distributedLockExecutor)
-                .execute(eq("coupon:issue:" + couponCode), any());
-
-        doAnswer(invocation -> {
-            // expiredCoupon 내부에서 validateUsable() 호출되도록 설정
-            return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
-        }).when(aopForTransaction).run(any());
 
         assertThrows(CouponException.ExpiredException.class, () ->
                 couponService.issueLimitedCoupon(new IssueLimitedCouponCommand(userId, couponCode))
@@ -136,16 +119,7 @@ class CouponServiceTest {
 
         given(couponRepository.findByCode(couponCode)).willReturn(soldOutCoupon);
 
-        doAnswer(invocation -> {
-            Callable<?> callable = invocation.getArgument(1, Callable.class);
-            return callable.call();
-        }).when(distributedLockExecutor)
-                .execute(eq("coupon:issue:" + couponCode), any());
 
-        doAnswer(invocation -> {
-            // expiredCoupon 내부에서 validateUsable() 호출되도록 설정
-            return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
-        }).when(aopForTransaction).run(any());
 
         assertThrows(CouponException.AlreadyExhaustedException.class, () ->
                 couponService.issueLimitedCoupon(new IssueLimitedCouponCommand(userId, couponCode))
