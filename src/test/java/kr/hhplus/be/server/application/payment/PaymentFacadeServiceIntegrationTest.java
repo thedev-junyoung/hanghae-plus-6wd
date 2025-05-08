@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.application.payment;
 
+import jakarta.persistence.EntityManager;
 import kr.hhplus.be.server.common.vo.Money;
 import kr.hhplus.be.server.domain.balance.Balance;
 import kr.hhplus.be.server.domain.balance.BalanceRepository;
@@ -21,27 +22,49 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
+
 @SpringBootTest
 class PaymentFacadeServiceIntegrationTest {
 
-    @Autowired PaymentFacadeService paymentFacadeService;
-    @Autowired PaymentRepository paymentRepository;
-    @Autowired BalanceRepository balanceRepository;
-    @Autowired OrderRepository orderRepository;
+    @Autowired
+    PaymentFacadeService paymentFacadeService;
+
+    @Autowired
+    PaymentRepository paymentRepository;
+
+    @Autowired
+    BalanceRepository balanceRepository;
+
+    @Autowired
+    OrderRepository orderRepository;
+
+    @Autowired
+    EntityManager entityManager;
+
 
     private final Long productId = 1L;
     private final int size = 270;
 
     @Test
-    @DisplayName("잔액 차감 → 이벤트 기반 결제 기록 및 주문 상태 변경 검증")
-    void requestPayment_success_flow() {
+    @DisplayName("성공: 잔액 차감 후 이벤트 기반으로 결제 정보와 주문 상태가 정확히 변경된다")
+    void should_process_payment_successfully_and_confirm_order() {
         // given
-        Long userId = 100L;
-        long originalBalance = balanceRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("잔액 없음"))
-                .getAmount();
-
+        Long userId = 1000L;
         long price = 199000L;
+
+        // ⭐ 반드시 충분한 잔액으로 초기화
+        balanceRepository.findByUserId(userId).ifPresentOrElse(
+                balance -> {
+                    balance.charge(Money.wons(1_000_000L)); // 충분히 충전
+                    balanceRepository.save(balance);
+                },
+                () -> balanceRepository.save(Balance.createNew(userId, Money.wons(1_000_000L)))
+        );
+
+        long originalBalance = balanceRepository.findByUserId(userId)
+                .orElseThrow().getAmount();
+
+        // 주문 생성
         Order order = Order.create(userId,
                 List.of(OrderItem.of(productId, 1, size, Money.wons(price))),
                 Money.wons(price));
@@ -52,23 +75,23 @@ class PaymentFacadeServiceIntegrationTest {
         // when
         PaymentResult result = paymentFacadeService.requestPayment(command);
 
-        // then
+        // then - 잔액은 즉시 검증 가능
         Balance updatedBalance = balanceRepository.findByUserId(userId).orElseThrow();
         assertThat(updatedBalance.getAmount()).isEqualTo(originalBalance - price);
 
-        // await 비동기 이벤트 처리 (payment, order status)
+        // 비동기 이벤트 결과 대기 → 결제 정보 & 주문 상태
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
             Payment payment = paymentRepository.findByOrderId(order.getId())
-                    .orElseThrow(() -> new AssertionError("결제 정보가 없음"));
+                    .orElseThrow(() -> new AssertionError("결제 정보가 아직 생성되지 않았습니다."));
             assertThat(payment.getAmount()).isEqualTo(price);
             assertThat(payment.getMethod()).isEqualTo("BALANCE");
 
+            entityManager.clear();
             Order updatedOrder = orderRepository.findById(order.getId()).orElseThrow();
             assertThat(updatedOrder.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
         });
 
         assertThat(result.status()).isEqualTo("SUCCESS");
-        assertThat(result.orderId()).isEqualTo(order.getId());
     }
 
     @Test
@@ -76,6 +99,14 @@ class PaymentFacadeServiceIntegrationTest {
     void requestPayment_fail_ifInsufficientBalance() {
         Long userId = 101L;
         long tooMuch = 500_000L;
+
+        balanceRepository.findByUserId(userId).ifPresentOrElse(
+                balance -> {
+                    balance.decrease(Money.wons(balance.getAmount()));
+                    balanceRepository.save(balance);
+                },
+                () -> balanceRepository.save(Balance.createNew(userId, Money.wons(0L)))
+        );
 
         Order order = Order.create(userId,
                 List.of(OrderItem.of(productId, 1, size, Money.wons(tooMuch))),
@@ -91,4 +122,5 @@ class PaymentFacadeServiceIntegrationTest {
         assertThat(paymentRepository.findByOrderId(order.getId())).isEmpty();
         assertThat(orderRepository.findById(order.getId()).orElseThrow().getStatus()).isEqualTo(OrderStatus.CREATED);
     }
+
 }

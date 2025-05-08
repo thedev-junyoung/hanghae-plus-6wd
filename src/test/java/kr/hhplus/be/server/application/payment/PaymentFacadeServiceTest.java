@@ -18,7 +18,6 @@ import static org.mockito.Mockito.*;
 class PaymentFacadeServiceTest {
 
     private BalanceService balanceService;
-    private ApplicationEventPublisher eventPublisher;
     private PaymentFacadeService facadeService;
     private PaymentService paymentService;
 
@@ -26,12 +25,11 @@ class PaymentFacadeServiceTest {
     void setUp() {
         balanceService = mock(BalanceService.class);
         paymentService = mock(PaymentService.class);
-        eventPublisher = mock(ApplicationEventPublisher.class);
-        facadeService = new PaymentFacadeService(balanceService, paymentService,eventPublisher);
+        facadeService = new PaymentFacadeService(balanceService, paymentService);
     }
 
     @Test
-    @DisplayName("잔액 차감 후 PaymentSuccessEvent, PaymentCompletedEvent 이벤트 발행")
+    @DisplayName("잔액 차감 → 결제 성공 처리")
     void requestPayment_success() {
         // Given
         String orderId = "ORDER-123";
@@ -54,7 +52,6 @@ class PaymentFacadeServiceTest {
         // Then
         verify(balanceService).decreaseBalance(new DecreaseBalanceCommand(userId, amount));
         verify(paymentService).recordSuccess(new PaymentCommand(orderId, Money.from(amount), method));
-        verify(eventPublisher).publishEvent(new PaymentCompletedEvent(orderId));
 
         assertThat(result.orderId()).isEqualTo(orderId);
         assertThat(result.amount()).isEqualTo(amount);
