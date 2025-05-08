@@ -13,7 +13,4 @@ public interface BalanceRepository{
      */
     Optional<Balance> findByUserId(Long userId);
 
-    void flush();
-
-    void clear();
 }

@@ -54,7 +54,8 @@ public class ProductService implements ProductUseCase {
         Product product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductException.NotFoundException(command.productId()));
         // 락 걸린 재고 조회
-        ProductStock stock = productStockRepository.findByProductIdAndSizeForUpdate(command.productId(), command.size())
+//        ProductStock stock = productStockRepository.findByProductIdAndSizeForUpdate(command.productId(), command.size())
+        ProductStock stock = productStockRepository.findByProductIdAndSize(command.productId(), command.size())
                 .orElseThrow(ProductException.InsufficientStockException::new);
 
         product.validateOrderable(stock.getStockQuantity());
@@ -67,6 +68,11 @@ public class ProductService implements ProductUseCase {
     public Product findProduct(Long productId) {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException.NotFoundException(productId));
+    }
+
+    @Override
+    public List<Product> findProductsByIds(List<Long> productIds) {
+        return productRepository.findAllById(productIds);
     }
 }
 

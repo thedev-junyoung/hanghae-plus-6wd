@@ -35,6 +35,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
+	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 
@@ -55,6 +56,16 @@ dependencies {
 	// Spring AOP
 	implementation("org.springframework.boot:spring-boot-starter-aop")
 	implementation("org.springframework.retry:spring-retry")
+
+	// Redis
+	implementation ("org.redisson:redisson-spring-boot-starter:3.24.3")
+	testImplementation("com.github.codemonstur:embedded-redis:1.0.0")
+
+	testImplementation ("org.testcontainers:junit-jupiter:1.19.7")
+
+	// https://mvnrepository.com/artifact/io.micrometer/micrometer-registry-prometheus
+	implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
+	implementation("io.micrometer:micrometer-core")
 
 }
 

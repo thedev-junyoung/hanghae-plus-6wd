@@ -12,8 +12,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
- 
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,11 +27,13 @@ class BalanceServiceTest {
     @Mock
     BalanceRepository balanceRepository;
 
+    @Mock
+    ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     BalanceService balanceService;
 
-    @Mock
-    BalanceHistoryRepository balanceHistoryRepository;
+
 
     @Test
     @DisplayName("잔액을 충전할 수 있다")
@@ -44,12 +47,17 @@ class BalanceServiceTest {
 
         ChargeBalanceCommand command = new ChargeBalanceCommand(100L, 1000, "충전 테스트", requestId);
 
+        doNothing().when(eventPublisher).publishEvent(any(BalanceChargedEvent.class));
+
         // when
         BalanceInfo info = balanceService.charge(command);
 
         // then
         assertThat(info.amount()).isEqualTo(2000L);
+
         verify(balanceRepository).save(existing);
+        verify(eventPublisher).publishEvent(any(BalanceChargedEvent.class));
+
     }
 
 

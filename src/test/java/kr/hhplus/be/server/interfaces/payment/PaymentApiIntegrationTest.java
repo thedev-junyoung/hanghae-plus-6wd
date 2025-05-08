@@ -65,4 +65,5 @@ class PaymentApiIntegrationTest {
         assertThat(result.getData().getOrderId()).isEqualTo(randomOrderId);
         assertThat(result.getData().getStatus()).isEqualTo("SUCCESS");
     }
+
 }

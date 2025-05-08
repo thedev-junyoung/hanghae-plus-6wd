@@ -2,12 +2,17 @@ package kr.hhplus.be.server.interfaces.product;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.hhplus.be.server.application.product.*;
+import kr.hhplus.be.server.application.productstatistics.ProductSalesInfo;
 import kr.hhplus.be.server.common.dto.CustomApiResponse;
+import kr.hhplus.be.server.domain.product.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -52,6 +57,30 @@ public class ProductController implements ProductAPI {
         ProductRequest.PopularRequest request = ProductRequest.PopularRequest.of(days, limit);
         PopularProductCriteria criteria = PopularProductCriteria.of(request);
         List<PopularProductResult> result = productFacade.getPopularProducts(criteria);
+
+        return ResponseEntity.ok(CustomApiResponse.success(
+                result.stream()
+                        .map(ProductResponse.PopularProductResponse::from)
+                        .toList()
+        ));
+    }
+    @GetMapping("/popular/without-cache")
+    public ResponseEntity<CustomApiResponse<List<ProductResponse.PopularProductResponse>>> getPopularProductsWithoutCache(
+            @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) Integer limit
+    ) {
+        ProductRequest.PopularRequest request = ProductRequest.PopularRequest.of(days, limit);
+        PopularProductCriteria criteria = PopularProductCriteria.of(request);
+
+        // 캐싱 없이 바로 조회
+        List<ProductSalesInfo> stats = productFacade.getPopularProductStatsOnly(criteria); // 별도 메서드 필요
+        List<Long> productIds = stats.stream().map(ProductSalesInfo::productId).toList();
+        Map<Long, Product> productMap = productUseCase.findProductsByIds(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        List<PopularProductResult> result = stats.stream()
+                .map(info -> PopularProductResult.from(productMap.get(info.productId()), info.salesCount()))
+                .toList();
 
         return ResponseEntity.ok(CustomApiResponse.success(
                 result.stream()

@@ -41,9 +41,19 @@ public class CouponIssue {
         this.issuedAt = LocalDateTime.now(clock);
     }
 
-    public static CouponIssue create(Long userId, Coupon coupon, Clock clock) {
+    public static CouponIssue createAndValidateDecreaseQuantity(
+            Long userId,
+            Coupon coupon,
+            Clock clock) {
         coupon.validateUsable(clock);
         coupon.decreaseQuantity(clock);
+        return new CouponIssue(userId, coupon, clock);
+    }
+
+    public static CouponIssue create(
+            Long userId,
+            Coupon coupon,
+            Clock clock) {
         return new CouponIssue(userId, coupon, clock);
     }
 

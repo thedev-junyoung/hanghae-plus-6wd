@@ -3,6 +3,7 @@ package kr.hhplus.be.server.application.productstatistics;
 import kr.hhplus.be.server.application.product.PopularProductCriteria;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface ProductStatisticsUseCase {
 
@@ -14,5 +15,5 @@ public interface ProductStatisticsUseCase {
     /**
      * 최근 N일 간 가장 많이 팔린 상품을 조회합니다.
      */
-    Collection<ProductSalesInfo> getTopSellingProducts(PopularProductCriteria criteria);
+    List<ProductSalesInfo> getTopSellingProducts(PopularProductCriteria criteria);
 }
