@@ -68,6 +68,47 @@ services:
     networks:
       - redis-net
 
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - redis-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - redis-net
+
+  k6:
+    image: grafana/k6
+    container_name: k6
+    volumes:
+      - ./monitoring/k6/scripts:/scripts
+    entrypoint: [ "sleep", "infinity" ]
+
+    environment:
+      - K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write
+    networks:
+      - redis-net
+
+
+
+
+
+
 networks:
   redis-net:
     driver: bridge

@@ -63,7 +63,8 @@ dependencies {
 
 	testImplementation ("org.testcontainers:junit-jupiter:1.19.7")
 
-
+	// https://mvnrepository.com/artifact/io.micrometer/micrometer-registry-prometheus
+	implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
 }
 
 tasks.withType<Test> {

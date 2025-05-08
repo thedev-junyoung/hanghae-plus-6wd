@@ -50,4 +50,8 @@ public class ProductFacade {
                 .toList();*/
     }
 
+    public List<ProductSalesInfo> getPopularProductStatsOnly(PopularProductCriteria criteria) {
+        return statisticsUseCase.getTopSellingProducts(criteria);
+    }
+
 }

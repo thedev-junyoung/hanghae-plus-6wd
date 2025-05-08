@@ -1,4 +1,4 @@
-import http from 'k6/http';
+import http from 'monitoring/k6/http';
 import { check } from 'k6';
 
 export const options = {
