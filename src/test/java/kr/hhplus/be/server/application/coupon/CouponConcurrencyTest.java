@@ -23,22 +23,32 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+
 /**
- * 비관적 락 기반의 동시 쿠폰 발급 테스트 클래스.
+ * Redis 분산락 기반 쿠폰 발급 동시성 테스트.
  *
- * <p>10명의 사용자가 동시에 수량 제한 쿠폰을 발급받으려는 상황을 시뮬레이션한다.</p>
+ * <p>다수 사용자가 동시에 동일 쿠폰을 발급받으려 할 때 Race Condition 없이 정합성이 유지되는지 검증한다.</p>
  *
- * <p>적용된 동시성 제어 방식:</p>
+ * <p>적용된 동시성 제어 전략:</p>
  * <ul>
- *   <li>JPA `@Lock(PESSIMISTIC_WRITE)`으로 select for update 처리</li>
- *   <li>도메인 로직에서 수량 차감 책임 분리 및 검증</li>
- *   <li>사용자 중복 발급 방지를 위한 유니크 체크</li>
+ *   <li><b>Redisson 분산락</b>: key = "coupon:issue:{couponCode}"</li>
+ *   <li><b>트랜잭션 경계</b>: 락 획득 후 @Transactional 시작</li>
+ *   <li><b>수량 차감 책임 분리</b>: Coupon 엔티티 내부에서 decreaseQuantity 검증</li>
+ *   <li><b>중복 발급 방지</b>: 쿠폰 발급 이력 중복 조회</li>
  * </ul>
  *
  * <p>검증 포인트:</p>
  * <ul>
- *   <li>실제 발급된 쿠폰 수량은 최대 재고 수량을 초과하지 않는다</li>
- *   <li>중복 발급 없이 정합성 유지</li>
+ *   <li>최대 발급 수량(TOTAL_QUANTITY)을 초과하지 않는다.</li>
+ *   <li>동일 사용자는 중복 발급되지 않는다.</li>
+ *   <li>멀티스레드 환경에서도 Race Condition 발생하지 않는다.</li>
+ * </ul>
+ *
+ * <p>테스트 시나리오:</p>
+ * <ul>
+ *   <li><b>CONCURRENCY=10</b>명 사용자가 동시 요청</li>
+ *   <li>최대 발급 수량은 2개로 제한</li>
+ *   <li>성공/실패 사용자 구분 후 최종 결과 검증</li>
  * </ul>
  */
 
@@ -111,4 +121,5 @@ public class CouponConcurrencyTest {
                 .withFailMessage(" 예상보다 많은 쿠폰이 발급되었습니다. 동시성 제어가 필요합니다.")
                 .isLessThanOrEqualTo(TOTAL_QUANTITY);
     }
+
 }

@@ -6,6 +6,7 @@ import kr.hhplus.be.server.common.lock.DistributedLockExecutor;
 import kr.hhplus.be.server.common.vo.Money;
 import kr.hhplus.be.server.domain.coupon.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,29 +14,43 @@ import java.time.Clock;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CouponService implements CouponUseCase {
 
     private final CouponRepository couponRepository;
     private final CouponIssueRepository couponIssueRepository;
     private final Clock clock;
 
+
+
     @DistributedLock(key = "#command.couponCode", prefix = "coupon:issue:")
     @Transactional
     public CouponResult issueLimitedCoupon(IssueLimitedCouponCommand command) {
+
+        log.info("[비즈니스 로직 시작: 쿠폰 발급] userId={}, couponCode={}", command.userId(), command.couponCode());
+
         Coupon coupon = couponRepository.findByCode(command.couponCode());
 
         if (couponIssueRepository.hasIssued(command.userId(), coupon.getId())) {
+            log.info("[중복 발급 차단] userId={}, couponCode={}", command.userId(), command.couponCode());
             throw new CouponException.AlreadyIssuedException(command.userId(), command.couponCode());
         }
 
         coupon.validateUsable(clock);
         coupon.decreaseQuantity(clock);
+        log.info("[재고 차감 완료] couponCode={}, 남은 수량={}", coupon.getCode(), coupon.getRemainingQuantity());
 
         CouponIssue issue = CouponIssue.create(command.userId(), coupon, clock);
+
+        log.info("[DB 저장 직전] userId={}, couponId={}", command.userId(), coupon.getId());
+
         couponIssueRepository.save(issue);
+
+        log.info("[비즈니스 로직 끝] 쿠폰 발급 성공 userId={}, couponCode={}", command.userId(), command.couponCode());
 
         return CouponResult.from(issue);
     }
+
 
     @Override
     @Transactional

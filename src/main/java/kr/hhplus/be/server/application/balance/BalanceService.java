@@ -26,7 +26,7 @@ public class BalanceService implements BalanceUseCase {
 
 
     public BalanceInfo charge(ChargeBalanceCommand command) {
-        log.info("[비즈니스 로직 시작] userId={}, amount={}", command.userId(), command.amount());
+        log.info("[비즈니스 로직 시작: 잔액 충전] userId={}, amount={}", command.userId(), command.amount());
 
         Balance balance = balanceRepository.findByUserId(command.userId())
                 .orElseThrow(() -> new BalanceException.NotFoundException(command.userId()));
@@ -37,7 +37,7 @@ public class BalanceService implements BalanceUseCase {
 
         balanceRepository.save(balance);
 
-        log.info("잔액 충전 완료: userId={}, amount={}", command.userId(), balance.getAmount());
+        log.info("[비즈니스 로직 끝] 잔액 충전 완료 : userId={}, amount={}", command.userId(), balance.getAmount());
         eventPublisher.publishEvent(BalanceChargedEvent.from(command));
 
         return BalanceInfo.from(balance);
