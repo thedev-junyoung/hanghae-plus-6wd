@@ -20,6 +20,7 @@ public class BalanceFacade {
     private final InMemoryRateLimiter rateLimiter;
 
 
+    @DistributedLock(key = "'balance:charge:' + #criteria.userId")
     public BalanceResult charge(ChargeBalanceCriteria criteria) {
         rateLimiter.validate(criteria.userId());
 
