@@ -5,10 +5,12 @@ import kr.hhplus.be.server.common.vo.Money;
 import kr.hhplus.be.server.domain.productstatistics.ProductStatistics;
 import kr.hhplus.be.server.domain.productstatistics.ProductStatisticsRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +28,7 @@ public class ProductStatisticsService implements ProductStatisticsUseCase {
     }
 
     @Override
-    public Collection<ProductSalesInfo> getTopSellingProducts(PopularProductCriteria criteria) {
+    public List<ProductSalesInfo> getTopSellingProducts(PopularProductCriteria criteria) {
         LocalDate today = LocalDate.now();
         LocalDate from = today.minusDays(criteria.days());
         int limit = criteria.limit();

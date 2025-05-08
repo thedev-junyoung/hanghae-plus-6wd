@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.application.product;
 
 import kr.hhplus.be.server.domain.product.*;
-import kr.hhplus.be.server.common.vo.Money;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,7 +9,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -19,8 +17,6 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class StockServiceTest {
 
-    @Mock
-    ProductRepository productRepository;
 
     @Mock
     ProductStockRepository productStockRepository;
@@ -38,7 +34,7 @@ class StockServiceTest {
 
         ProductStock stock = ProductStock.of(productId, size, 10);
 
-        when(productStockRepository.findByProductIdAndSizeForUpdate(productId, size))
+        when(productStockRepository.findByProductIdAndSize(productId, size))
                 .thenReturn(Optional.of(stock));
 
         // when
@@ -61,7 +57,7 @@ class StockServiceTest {
     @Test
     @DisplayName("재고 차감 실패 - 재고 없음")
     void decrease_fail_stock_not_found() {
-        when(productStockRepository.findByProductIdAndSizeForUpdate(1L, 270))
+        when(productStockRepository.findByProductIdAndSize(1L, 270))
                 .thenReturn(Optional.empty());
 
         // expect
@@ -80,7 +76,7 @@ class StockServiceTest {
 
         ProductStock stock = ProductStock.of(productId, size, 2); // 부족한 재고
 
-        when(productStockRepository.findByProductIdAndSizeForUpdate(productId, size))
+        when(productStockRepository.findByProductIdAndSize(productId, size))
                 .thenReturn(Optional.of(stock));
 
         // expect

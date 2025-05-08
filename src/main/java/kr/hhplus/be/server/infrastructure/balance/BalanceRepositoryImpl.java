@@ -12,7 +12,6 @@ import java.util.Optional;
 public class BalanceRepositoryImpl implements BalanceRepository {
 
     private final BalanceJpaRepository jpaRepository;
-    private final EntityManager entityManager;
 
     @Override
     public Balance save(Balance balance) {
@@ -24,12 +23,4 @@ public class BalanceRepositoryImpl implements BalanceRepository {
         return jpaRepository.findByUserId(userId);
     }
 
-    public void flush() {
-        entityManager.flush();
-    }
-
-    @Override
-    public void clear() {
-        entityManager.clear();
-    }
 }
