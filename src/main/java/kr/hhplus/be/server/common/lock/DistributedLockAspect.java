@@ -58,7 +58,7 @@ public class DistributedLockAspect {
         } catch (Exception e) {
             log.error("분산락 수행 중 예외 발생 - key: {}", lockKey, e);
             throw e;
-        } finally {
+        }finally {
             if (isLocked && lock.isHeldByCurrentThread()) {
                 log.info("락 해제 - key: {}", lockKey);
                 lock.unlock();
