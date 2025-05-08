@@ -1,11 +1,13 @@
 package kr.hhplus.be.server.interfaces.order;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import kr.hhplus.be.server.common.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(GlobalExceptionHandler.class)
 class OrderControllerIntegrationTest {
 
     @Autowired
@@ -97,6 +100,7 @@ class OrderControllerIntegrationTest {
                         .header("X-USER-ID", String.valueOf(USER_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnprocessableEntity());
-    }
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.status").value("error"))
+                .andExpect(jsonPath("$.message").value("재고가 부족합니다."));    }
 }

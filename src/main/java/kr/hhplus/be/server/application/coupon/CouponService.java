@@ -1,16 +1,19 @@
 package kr.hhplus.be.server.application.coupon;
 
+import kr.hhplus.be.server.application.order.CreateOrderCommand;
 import kr.hhplus.be.server.common.lock.AopForTransaction;
 import kr.hhplus.be.server.common.lock.DistributedLock;
 import kr.hhplus.be.server.common.lock.DistributedLockExecutor;
 import kr.hhplus.be.server.common.vo.Money;
 import kr.hhplus.be.server.domain.coupon.*;
+import kr.hhplus.be.server.domain.order.OrderItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -73,4 +76,25 @@ public class CouponService implements CouponUseCase {
 
         return ApplyCouponResult.from(coupon, discount);
     }
+
+    public Money calculateDiscountedTotal(CreateOrderCommand command, List<OrderItem> items) {
+        Money total = items.stream()
+                .map(OrderItem::calculateTotal)
+                .reduce(Money.ZERO, Money::add);
+
+        if (!command.hasCouponCode()) {
+            return total;
+        }
+
+        Coupon coupon = couponRepository.findByCode(command.couponCode());
+
+        CouponIssue issue = couponIssueRepository.findByUserIdAndCouponId(command.userId(), coupon.getId())
+                .orElseThrow(() -> new CouponException.NotIssuedException(command.userId(), command.couponCode()));
+
+        coupon.validateUsable(clock);
+
+        Money discount = issue.getCoupon().calculateDiscount(total);
+        return total.subtract(discount);
+    }
+
 }

@@ -1,22 +1,14 @@
 package kr.hhplus.be.server.application.order;
 
-import kr.hhplus.be.server.application.coupon.ApplyCouponCommand;
-import kr.hhplus.be.server.application.coupon.ApplyCouponResult;
 import kr.hhplus.be.server.application.coupon.CouponUseCase;
 import kr.hhplus.be.server.application.product.*;
-import kr.hhplus.be.server.common.lock.AopForTransaction;
-import kr.hhplus.be.server.common.lock.DistributedLockExecutor;
 import kr.hhplus.be.server.common.vo.Money;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.aop.framework.AopContext;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import kr.hhplus.be.server.domain.order.Order;
 import kr.hhplus.be.server.domain.order.OrderItem;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,63 +16,42 @@ import java.util.List;
 @Slf4j
 public class OrderFacadeService {
 
-    private final ProductUseCase productService;
+    private final OrderItemCreator orderItemCreator;
     private final OrderUseCase orderService;
     private final OrderEventUseCase orderEventService;
     private final CouponUseCase couponUseCase;
-    private final StockService stockService;
-    private final DistributedLockExecutor lockExecutor;
-    private final AopForTransaction aopForTransaction;
-
+    private final OrderCompensationService compensationService;
 
     public OrderResult createOrder(CreateOrderCommand command) {
-        // 1. 초기화 - 전체 금액 및 주문 아이템 리스트 준비
-        Money total = Money.wons(0L);
-        List<OrderItem> orderItems = new ArrayList<>();
+        Order order = null;
 
-        // 2. 각 상품에 대해 주문 상세 구성
-        for (CreateOrderCommand.OrderItemCommand item : command.items()) {
-            // 2-1. 재고 차감
+        try {
+            // 1. OrderItem 생성 (재고 차감 포함, 분산락 적용)
+            List<OrderItem> orderItems = orderItemCreator.createOrderItems(command.items());
 
-            lockExecutor.execute("stock:" + item.productId() + ":" + item.size(), () ->
-                    aopForTransaction.run(() -> {
-                        stockService.decrease(DecreaseStockCommand.of(item.productId(), item.size(), item.quantity()));
-                        return null;
-                    })
-            );
-            // 2-2. 상품 상세 조회 (가격 포함)
-            ProductDetailResult product = productService.getProductDetail(
-                    GetProductDetailCommand.of(item.productId(), item.size())
-            );
-            // 2-3. 주문 상품 가격 계산
-            Money itemPrice = Money.wons(product.product().price());
-            Money itemTotal = itemPrice.multiply(item.quantity());
+            // 2. 총액 계산 + 쿠폰 할인 적용
+            Money discountedTotal = couponUseCase.calculateDiscountedTotal(command, orderItems);
 
-            // 2-4. 주문 아이템으로 추가
-            orderItems.add(OrderItem.of(item.productId(), item.quantity(), item.size(), itemPrice));
-            total = total.add(itemTotal);
+            // 3. 주문 생성 및 저장 (TX 내부)
+            order = orderService.createOrder(command.userId(), orderItems, discountedTotal);
+
+            // 4. 이벤트 발행 (Outbox 또는 Domain Event 기반)
+            orderEventService.recordPaymentCompletedEvent(order);
+
+            return OrderResult.from(order);
+
+        } catch (Exception e) {
+            log.error("주문 실패 → 보상 트랜잭션 수행 시작", e);
+
+            // 1. 재고 보상
+            compensationService.compensateStock(command.items());
+
+            // 2. 주문 생성이 된 경우 상태 변경
+            if (order != null) {
+                compensationService.markOrderAsFailed(order.getId());
+            }
+
+            throw e;
         }
-        // 3. 쿠폰 할인 적용
-        if (command.hasCouponCode()) {
-            ApplyCouponResult couponResult = couponUseCase.applyCoupon(
-                    new ApplyCouponCommand(command.userId(), command.couponCode(), total)
-            );
-            total = total.subtract(couponResult.discountAmount());
-        }
-
-
-        // 4. 주문 생성 및 저장
-        Order order = orderService.createOrder(command.userId(), orderItems, total);
-
-
-        log.info(order.toString());
-
-        // 5. 결제 완료 이벤트 발행 (Outbox 패턴 기반 처리)
-        orderEventService.recordPaymentCompletedEvent(order);
-
-        // 6. 응답 객체 반환
-        return OrderResult.from(order);
     }
-
 }
-
