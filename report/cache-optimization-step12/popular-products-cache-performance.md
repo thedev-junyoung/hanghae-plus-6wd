@@ -39,9 +39,9 @@ public List<PopularProductResult> getPopularProducts(PopularProductCriteria crit
 - **응답 시간 약 83% 감소**
 - 부하 대응 및 확장성 측면에서 확연한 개선
 
-📂 **사용한 k6 스크립트 경로**: `./monitoring/k6/scripts`
+📂 [사용한 k6 스크립트 경로](../../monitoring/k6/scripts)
 
-📂 **k6 스크립트 실행결과** : `./monitoring/k6/result`
+📂 [k6 스크립트 실행결과](../../monitoring/k6/result)
 
 ---
 
