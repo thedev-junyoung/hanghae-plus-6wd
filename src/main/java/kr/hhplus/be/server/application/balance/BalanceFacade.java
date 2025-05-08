@@ -1,13 +1,10 @@
 package kr.hhplus.be.server.application.balance;
 
-import kr.hhplus.be.server.common.lock.AopForTransaction;
 import kr.hhplus.be.server.common.lock.DistributedLock;
-import kr.hhplus.be.server.common.lock.DistributedLockExecutor;
 import kr.hhplus.be.server.common.rate.InMemoryRateLimiter;
 import kr.hhplus.be.server.domain.balance.Balance;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -21,7 +18,6 @@ public class BalanceFacade {
     private final BalanceRetryService retryService;
     private final BalanceHistoryUseCase historyUseCase;
     private final InMemoryRateLimiter rateLimiter;
-    private final ApplicationEventPublisher eventPublisher;
 
 
     @DistributedLock(key = "'balance:charge:' + #criteria.userId")

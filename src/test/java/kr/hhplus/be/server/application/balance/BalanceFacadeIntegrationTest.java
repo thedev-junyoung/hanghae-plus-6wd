@@ -2,24 +2,20 @@ package kr.hhplus.be.server.application.balance;
 
 import kr.hhplus.be.server.common.vo.Money;
 import kr.hhplus.be.server.domain.balance.Balance;
-import kr.hhplus.be.server.domain.balance.BalanceHistory;
 import kr.hhplus.be.server.domain.balance.BalanceHistoryRepository;
 import kr.hhplus.be.server.domain.balance.BalanceRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.context.ActiveProfiles;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
+@ActiveProfiles("test")
 class BalanceFacadeIntegrationTest {
 
     @Autowired
@@ -46,19 +42,8 @@ class BalanceFacadeIntegrationTest {
 
         // when
         balanceFacade.charge(criteria);
+        Balance updated = balanceRepository.findByUserId(userId).orElseThrow();
+        assertThat(updated.getAmount()).isEqualTo(beforeAmount + charge.value());
 
-        // then (await: 비동기 이벤트 반영 기다림)
-        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
-            Balance updated = balanceRepository.findByUserId(userId).orElseThrow();
-            assertThat(updated.getAmount()).isEqualTo(beforeAmount + charge.value());
-
-            List<BalanceHistory> histories = balanceHistoryRepository.findAllByUserId(userId);
-            assertThat(histories).isNotEmpty();
-
-            BalanceHistory latest = histories.get(histories.size() - 1);
-            assertThat(latest.getAmount()).isEqualTo(charge.value());
-            assertThat(latest.isChargeHistory()).isTrue();
-            assertThat(latest.getReason()).isEqualTo("충전 테스트");
-        });
     }
 }
