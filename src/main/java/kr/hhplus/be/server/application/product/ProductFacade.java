@@ -42,12 +42,6 @@ public class ProductFacade {
         return stats.stream()
                 .map(info -> PopularProductResult.from(productMap.get(info.productId()), info.salesCount()))
                 .toList();
-   /*     return statisticsUseCase.getTopSellingProducts(criteria).stream()
-                .map(info -> {
-                    Product product = productUseCase.findProduct(info.productId());
-                    return PopularProductResult.from(product, info.salesCount());
-                })
-                .toList();*/
     }
 
     public List<ProductSalesInfo> getPopularProductStatsOnly(PopularProductCriteria criteria) {

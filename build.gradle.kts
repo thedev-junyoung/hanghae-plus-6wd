@@ -65,6 +65,8 @@ dependencies {
 
 	// https://mvnrepository.com/artifact/io.micrometer/micrometer-registry-prometheus
 	implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
+	implementation("io.micrometer:micrometer-core")
+
 }
 
 tasks.withType<Test> {
