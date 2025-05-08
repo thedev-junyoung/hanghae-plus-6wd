@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -33,13 +35,15 @@ class ProductFacadeTest {
     void popular_product() {
         // given
         PopularProductCriteria criteria = new PopularProductCriteria(3, 5);
-
         ProductSalesInfo info = new ProductSalesInfo(1L, 10L);
+
         when(statisticsUseCase.getTopSellingProducts(criteria))
                 .thenReturn(List.of(info));
 
         Product mockProduct = mockProduct();
-        when(productUseCase.findProduct(1L)).thenReturn(mockProduct);
+
+        when(productUseCase.findProductsByIds(List.of(1L)))
+                .thenReturn(List.of(mockProduct));
 
         // when
         List<PopularProductResult> results = productFacade.getPopularProducts(criteria);
@@ -53,7 +57,7 @@ class ProductFacadeTest {
         assertThat(result.salesCount()).isEqualTo(10);
 
         verify(statisticsUseCase).getTopSellingProducts(criteria);
-        verify(productUseCase).findProduct(1L);
+        verify(productUseCase).findProductsByIds(List.of(1L));
     }
 
     private Product mockProduct() {

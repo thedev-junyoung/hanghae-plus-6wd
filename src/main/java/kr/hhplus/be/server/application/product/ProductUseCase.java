@@ -2,6 +2,8 @@ package kr.hhplus.be.server.application.product;
 
 import kr.hhplus.be.server.domain.product.Product;
 
+import java.util.List;
+
 
 public interface ProductUseCase {
 
@@ -23,4 +25,6 @@ public interface ProductUseCase {
      *
      */
     Product findProduct(Long productId); // Info 생성을 위한 raw entity
+
+    public List<Product> findProductsByIds(List<Long> productIds);
 }

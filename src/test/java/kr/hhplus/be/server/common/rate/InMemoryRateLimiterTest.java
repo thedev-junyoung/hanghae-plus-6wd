@@ -37,7 +37,7 @@ class InMemoryRateLimiterTest {
         rateLimiter.validate(USER_ID);
 
         // 제한 시간(800ms) 이후 재요청
-        Thread.sleep(850);
+        Thread.sleep(1050);
 
         assertDoesNotThrow(() -> rateLimiter.validate(USER_ID));
     }

@@ -6,7 +6,7 @@ public record ChargeBalanceCriteria(
         Long userId,
         long amount,
         String reason,
-        String requestId // ✅ 고유 요청 식별자
+        String requestId // 고유 요청 식별자
 ) {
     public static ChargeBalanceCriteria of(Long userId, long amount, String reason, String requestId) {
         return new ChargeBalanceCriteria(userId, amount, reason, requestId);
@@ -17,7 +17,7 @@ public record ChargeBalanceCriteria(
                 request.userId(),
                 request.amount(),
                 "사용자 요청에 따른 충전",
-                request.requestId() // ✅ 프론트에서 넘겨주는 requestId
+                request.requestId() // 프론트에서 넘겨주는 requestId
         );
     }
 }

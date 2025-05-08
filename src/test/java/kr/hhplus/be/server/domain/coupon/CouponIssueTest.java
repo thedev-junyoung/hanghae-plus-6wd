@@ -23,7 +23,7 @@ class CouponIssueTest {
     void create_shouldDecreaseQuantityAndSetIssuedAt() {
         Coupon coupon = createValidCoupon();
 
-        CouponIssue issue = CouponIssue.create(userId, coupon, fixedClock);
+        CouponIssue issue = CouponIssue.createAndValidateDecreaseQuantity(userId, coupon, fixedClock);
 
         assertThat(issue.getUserId()).isEqualTo(userId);
         assertThat(issue.getCoupon()).isEqualTo(coupon);
@@ -61,7 +61,7 @@ class CouponIssueTest {
                 LocalDateTime.now(fixedClock).minusDays(10),
                 LocalDateTime.now(fixedClock).minusDays(1));
 
-        assertThatThrownBy(() -> CouponIssue.create(userId, expiredCoupon, fixedClock))
+        assertThatThrownBy(() -> CouponIssue.createAndValidateDecreaseQuantity(userId, expiredCoupon, fixedClock))
                 .isInstanceOf(CouponException.ExpiredException.class);
     }
 
