@@ -1,13 +1,18 @@
 package kr.hhplus.be.server.application.balance;
 
+import kr.hhplus.be.server.common.lock.DistributedLock;
 import kr.hhplus.be.server.common.rate.InMemoryRateLimiter;
+import kr.hhplus.be.server.domain.balance.Balance;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BalanceFacade {
 
     private final BalanceRetryService retryService;
@@ -15,17 +20,17 @@ public class BalanceFacade {
     private final InMemoryRateLimiter rateLimiter;
 
 
-
-    @Transactional
     public BalanceResult charge(ChargeBalanceCriteria criteria) {
         rateLimiter.validate(criteria.userId());
 
-        ChargeBalanceCommand command = ChargeBalanceCommand.from(criteria);
-        BalanceInfo info = retryService.chargeWithRetry(command);
-        historyUseCase.recordHistory(RecordBalanceHistoryCommand.of(criteria));
+        Optional<Balance> duplicated = historyUseCase.findIfDuplicatedRequest(criteria.requestId(), criteria.userId());
+        if (duplicated.isPresent()) {
+            log.warn("[멱등 요청] 이미 처리된 충전: requestId={}, userId={}", criteria.requestId(), criteria.userId());
+            return BalanceResult.fromInfo(BalanceInfo.from(duplicated.get()));
+        }
+        BalanceInfo info = retryService.chargeWithRetry(ChargeBalanceCommand.from(criteria));
         return BalanceResult.fromInfo(info);
     }
-
 
 }
 
