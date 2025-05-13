@@ -115,7 +115,6 @@ public class CouponConcurrencyTest {
         System.out.printf("총 발급 실패 수: %d명\n", failedUsers.size());
         System.out.printf("DB 기준 실제 발급 수량: %d개\n", totalIssued);
         System.out.printf("발급 성공자: %s\n", successUsers);
-
         assertThat(totalIssued)
                 .withFailMessage(" 예상보다 많은 쿠폰이 발급되었습니다. 동시성 제어가 필요합니다.")
                 .isLessThanOrEqualTo(TOTAL_QUANTITY);

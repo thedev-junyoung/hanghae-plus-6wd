@@ -1,5 +1,8 @@
 package kr.hhplus.be.server.application.order;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import kr.hhplus.be.server.config.TestCompensationConfig;
 import kr.hhplus.be.server.domain.order.OrderRepository;
 import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.domain.product.ProductRepository;
@@ -11,6 +14,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -57,6 +62,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ul>
  */
 @SpringBootTest
+@Import(TestCompensationConfig.class)
+@ActiveProfiles("test")
 public class OrderConcurrencyTest {
 
     @Autowired
@@ -70,6 +77,9 @@ public class OrderConcurrencyTest {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @PersistenceContext
+    private EntityManager em;
 
     private Long productId;
 
@@ -87,6 +97,8 @@ public class OrderConcurrencyTest {
         product = productRepository.save(product);
 
         stockRepository.save(ProductStock.of(product.getId(), 270, INIT_STOCK));
+
+        em.clear(); // 1차 캐시 제거 (다른 쓰레드에서 DB만 조회하게 됨)
 
         this.productId = product.getId();
     }
@@ -124,6 +136,7 @@ public class OrderConcurrencyTest {
 
         latch.await();
 
+        em.clear(); // 영속성 컨텍스트 초기화
         // 재고 확인
         ProductStock stock = stockRepository.findByProductIdAndSize(productId, 270)
                 .orElseThrow(() -> new IllegalStateException("재고 없음"));

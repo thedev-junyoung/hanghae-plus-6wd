@@ -55,6 +55,9 @@ public class BalanceService implements BalanceUseCase {
     }
 
     @Override
+    @Transactional
+//    @DistributedLock(key = "#command.orderId", prefix = "payment:order:")
+//    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean decreaseBalance(DecreaseBalanceCommand command) {
         Balance balance = balanceRepository.findByUserId(command.userId())
                 .orElseThrow(() -> new BalanceException.NotFoundException(command.userId()));

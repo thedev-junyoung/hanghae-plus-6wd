@@ -17,6 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDate;
@@ -62,6 +64,7 @@ public class PaymentConcurrencyTest {
     @Autowired
     private PaymentFacadeService paymentFacadeService;
 
+
     @Autowired
     private BalanceFacade balanceFacade;
 
@@ -80,9 +83,9 @@ public class PaymentConcurrencyTest {
     @Autowired
     private BalanceRepository balanceRepository;
 
+
     private final Long userId = System.currentTimeMillis();
     private String orderId;
-
     private final long PRICE = 10_000L;
 
     @BeforeEach
