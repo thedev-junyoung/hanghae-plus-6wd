@@ -30,6 +30,34 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * <h2>PaymentConcurrencyTest</h2>
+ *
+ * <p>결제 요청의 동시성 제어를 검증하는 테스트 클래스.</p>
+ *
+ * <p>하나의 주문(orderId)에 대해 여러 요청자가 동시에 결제를 시도할 때,
+ * Redis 기반 분산락을 통해 중복 결제를 방지하는 로직이 제대로 작동하는지 검증한다.</p>
+ *
+ * <h3>🛠 적용된 동시성 제어 방식</h3>
+ * <ul>
+ *   <li>Redisson 기반 분산락을 AOP로 적용: `@DistributedLock(key = "#command.orderId", prefix = "payment:order:")`</li>
+ *   <li>결제 성공 기록, 잔액 차감, 후속 이벤트 발행을 하나의 트랜잭션 내에서 처리</li>
+ * </ul>
+ *
+ * <h3>🧪 검증 포인트</h3>
+ * <ul>
+ *   <li>동시에 여러 결제 요청이 들어와도 **오직 1건만 성공**</li>
+ *   <li>잔액은 정확히 1회만 차감 (10,000원 → 0원)</li>
+ *   <li>나머지 요청은 예외 발생 (결제 중복 또는 잔액 부족)</li>
+ * </ul>
+ *
+ * <h3>📌 추가 사항</h3>
+ * <ul>
+ *   <li>결제 성공 시, `PaymentCompletedEvent`를 발행하여 후속 처리(Event-Driven Architecture)</li>
+ *   <li>Balance 차감 실패 또는 중복 결제 시, 예외를 통해 트랜잭션 전체 롤백</li>
+ * </ul>
+ */
+
 @SpringBootTest
 public class PaymentConcurrencyTest {
 
